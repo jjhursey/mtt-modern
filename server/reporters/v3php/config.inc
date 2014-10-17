@@ -1,5 +1,11 @@
 <?php
 
+#
+# 0 = Is not production - testing/development setup
+# 1 = Is production - Serving the broader community
+#
+$is_production = 0;
+
 # Open MPI-specific functionality: deny mirrors access to Open MPI MTT
 $mother_site = "www.open-mpi.org";
 $server_dir = "/";
@@ -8,7 +14,7 @@ $server_dir = "/";
 # run locally as a script via cron, therefore it won't have certain
 # array keys set in $_SERVER (and therefore should not be subject to
 # the mirroring stuff).
-if (array_key_exists("SERVER_NAME", $_SERVER) &&
+if (1 == $is_production && array_key_exists("SERVER_NAME", $_SERVER) &&
     0 != strncmp($_SERVER["SERVER_NAME"], $mother_site, strlen($mother_site)) ) {
     $equiv_dir = ereg_replace("^$server_dir", '', $_SERVER["REQUEST_URI"]);
     print "Sorry, this page is not mirrored.  " .
@@ -19,6 +25,7 @@ if (array_key_exists("SERVER_NAME", $_SERVER) &&
 }
 
 ###########################################################################
+$www_config_dir = "/home/mtt//www-private/";
 
 # If you are tracking MTT usaging through Google Analytics, fill in 
 # your account number here.
@@ -35,22 +42,23 @@ $mtt_body_html_prefix = "";
 
 # If you want some data output at the end of the <body>, put it
 # in this variable.
-$mtt_body_html_suffix = rtrim(file_get_contents("/l/osl/www/www.open-mpi.org/mtt/body_suffix.html"));
+$mtt_body_html_suffix = rtrim(file_get_contents($www_config_dir."body_suffix.html"));
 
 # Database name
-$mtt_database_name = "mtt";
+#$mtt_database_name = "mtt";
+$mtt_database_name = "mttflat";
 
 # Database username
 $mtt_database_username = "mtt";
 
 # Database password
-$mtt_database_password = rtrim(file_get_contents("/l/osl/www/doc/www.open-mpi.org/mtt-db-password.txt"));
+$mtt_database_password = rtrim(file_get_contents($www_config_dir."mtt-db-password.txt"));
 
 # HTTP username
-$mtt_http_username = "sun";
+$mtt_http_username = "mtt";
 
 # HTTP password
-$mtt_http_password = rtrim(file_get_contents("/l/osl/www/doc/www.open-mpi.org/mtt-http-password.txt"));
+$mtt_http_password = rtrim(file_get_contents($www_config_dir."mtt-http-password.txt"));
 
 # Where to render graphs?  Must be writable by the web server.
 $mtt_graph_tmp_dir = "tmp";

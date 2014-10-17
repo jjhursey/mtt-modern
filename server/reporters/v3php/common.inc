@@ -24,4 +24,13 @@ function mtt_notice($str) {
     print("MTTDatabase server notice: $str\n");
 }
 
+function mtt_abort($status, $str) {
+    if (!headers_sent()) {
+        header("HTTP/1.0 $status");
+    } else {
+        print("MTTDatabase abort: (Tried to send HTTP error) $status\n");
+    }
+    print("MTTDatabase abort: $str\n");
+}
+
 ?>
