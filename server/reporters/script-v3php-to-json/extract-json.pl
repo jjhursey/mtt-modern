@@ -11,10 +11,17 @@
 #
 
 use strict;
+use JSON;
+use Data::Dumper;
 
 my $debug;
 
-
+#
+# Encode the fields in the server string (1) or plaintext (0)
+#
+my $encode_fields = 1;
+my $fields_file = "fields.json";
+my $fields_data;
 
 my $MAKE_PRETTY = 1;
 my $MAKE_FLAT   = 0;
@@ -40,6 +47,11 @@ sub main() {
   my $line;
   my $line_num = 0;
   my $table_num = 0;
+
+  #
+  # Load the field data
+  #
+  load_field_from_json();
 
   #
   # Open the file
@@ -164,12 +176,16 @@ sub display_data_json() {
     print $fh "        " if( $pretty );
     print $fh "]";
   }
+  print $fh "\n" if( $pretty );
+  print $fh "    " if( $pretty );
+  print $fh "]";
 
   print $fh "\n" if( $pretty );
   print $fh "}";
   print $fh "\n" if( $pretty );
 
   print $fh "\n";
+
   return 0;
 }
 
@@ -240,22 +256,22 @@ sub extract_header() {
       $line =~ s/<.*?>//g;
       #print "Header: " . $line . "\n\n";
       if( $line =~ /MPI install/i ) {
-        push(@table_header, ($line . " Pass") );
-        push(@table_header, ($line . " Fail") );
+        push(@table_header, translate_header_field($line . " Pass") );
+        push(@table_header, translate_header_field($line . " Fail") );
       }
       elsif( $line =~ /Test build/i ) {
-        push(@table_header, ($line . " Pass") );
-        push(@table_header, ($line . " Fail") );
+        push(@table_header, translate_header_field($line . " Pass") );
+        push(@table_header, translate_header_field($line . " Fail") );
       }
       elsif( $line =~ /Test run/i ) {
-        push(@table_header, ($line . " Pass") );
-        push(@table_header, ($line . " Fail") );
-        push(@table_header, ($line . " Skip") );
-        push(@table_header, ($line . " Timed") );
-        push(@table_header, ($line . " Perf") );
+        push(@table_header, translate_header_field($line . " Pass") );
+        push(@table_header, translate_header_field($line . " Fail") );
+        push(@table_header, translate_header_field($line . " Skip") );
+        push(@table_header, translate_header_field($line . " Timed") );
+        push(@table_header, translate_header_field($line . " Perf") );
       }
       else {
-        push(@table_header, $line);
+        push(@table_header, translate_header_field($line));
       }
 
     }
@@ -275,6 +291,42 @@ sub extract_header() {
   return 0;
 }
 
+sub load_field_from_json() {
+    my $json_text = do {
+        open(my $json_fh, "<:encoding(UTF-8)", $fields_file) or die("Can't open \$fields_file\": $!\n");
+        local $/;
+        <$json_fh>
+    };
+    my $json = JSON->new;
+    my $data = $json->decode($json_text);
+    $fields_data = $data->{"summary"};
+    #print Dumper($fields_data);
+}
+
+sub translate_header_field() {
+    my $in = shift(@_);
+    my $out = $in;
+
+    #
+    # If not encoding then there is nothing to translate
+    #
+    if(1 != $encode_fields ) {
+        return $in;
+    }
+
+    #
+    # Read in the fields data
+    #
+    foreach my $field (keys %{$fields_data}) {
+        my $plain = $fields_data->{$field};
+        if( $in eq $plain ) {
+            $out = $field;
+            last;
+        }
+    }
+    return $out;
+}
+
 sub get_raw_data() {
   my $url = "http://mtt.open-mpi.org/index.php?limit=&wrap=&trial=&enable_drilldowns=&yaxis_scale=&xaxis_scale=&hide_subtitle=&split_graphs=&remote_go=&do_cookies=&phase=all_phases&text_start_timestamp=past+24+hours&text_platform_hardware=all&show_platform_hardware=show&text_os_name=all&show_os_name=show&text_mpi_name=all&show_mpi_name=show&text_mpi_version=all&show_mpi_version=show&text_http_username=all&show_http_username=show&text_local_username=all&show_local_username=hide&text_platform_name=all&show_platform_name=show&click=Summary&text_compute_cluster_id=&text_os_version=&show_os_version=&text_platform_type=&show_platform_type=&text_submit_id=&text_hostname=&show_hostname=&text_mpi_get_id=&text_mpi_install_compiler_id=&text_mpi_install_configure_id=&text_mpi_install_id=&text_compiler_name=&show_compiler_name=&text_compiler_version=&show_compiler_version=&text_vpath_mode=&show_vpath_mode=&text_endian=&show_endian=&text_bitness=&show_bitness=&text_configure_arguments=&text_exit_value=&show_exit_value=&text_exit_signal=&show_exit_signal=&text_duration=&show_duration=&text_client_serial=&show_client_serial=&text_result_message=&text_result_stdout=&text_result_stderr=&text_environment=&text_description=&lastgo=";
   my $raw_file = "/tmp/raw.txt";
@@ -282,7 +334,7 @@ sub get_raw_data() {
   #
   # Grab the latest data from the existing reporter
   #
-  if( !defined($debug) ) {
+  if( !(-e $raw_file) || !defined($debug) ) {
     $cmd = "curl \"$url\" > $raw_file";
     system($cmd);
   }
