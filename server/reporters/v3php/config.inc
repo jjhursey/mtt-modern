@@ -25,7 +25,7 @@ if (1 == $is_production && array_key_exists("SERVER_NAME", $_SERVER) &&
 }
 
 ###########################################################################
-$www_config_dir = "/home/mtt//www-private/";
+$www_config_dir = "/home/mtt/www-private/";
 
 # If you are tracking MTT usaging through Google Analytics, fill in 
 # your account number here.
@@ -45,8 +45,7 @@ $mtt_body_html_prefix = "";
 $mtt_body_html_suffix = rtrim(file_get_contents($www_config_dir."body_suffix.html"));
 
 # Database name
-#$mtt_database_name = "mtt";
-$mtt_database_name = "mttflat";
+$mtt_database_name = "mttv3";
 
 # Database username
 $mtt_database_username = "mtt";
