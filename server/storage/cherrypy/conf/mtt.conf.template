@@ -1,0 +1,5 @@
+[mttflat]
+type: postgres
+dbname: mttflat
+username: USERNAME
+password: PASSWORD

@@ -6,9 +6,4 @@ Below are some development notes about the various backends that we are experime
 
 ## CherryPy
 
-Installation instructions for the [CherryPy](http://www.cherrypy.org/) backend option.
-
-```
-pip install cherrypy
-python -m cherrypy.tutorial.tut01_helloworld
-```
+Installation instructions for the [CherryPy](http://www.cherrypy.org/) backend option are in the cherrypy directory.
