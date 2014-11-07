@@ -1,0 +1,11 @@
+#main {
+    margin-bottom: 20px;
+}
+
+#main, #main div {
+    border: 1px solid black;
+}
+
+#phases {
+    margin: 0px;
+}

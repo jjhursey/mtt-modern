@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="css/dataTables.colReorder.css">
+    <link rel="stylesheet" type="text/css" href="https://datatables.net/release-datatables/extensions/ColVis/css/dataTables.colVis.css">
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="js/dataTables.colReorder.js"></script>
+    <script type="text/javascript" charset="utf8" src="//datatables.net/release-datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.min.js"></script>
+
+
+
+    <link rel="stylesheet" href="css/main.css">
+
+
+    <body>
+        <h4>MTT Reporter</h4>
+        <div id="main">
+            <div id="phases">
+                <form>
+                    <input type="radio" name="phase" value="allphases">All Phases
+                    <input type="radio" name="phase" value="installphase">MPI-Install
+                    <input type="radio" name="phase" value="buildphase">Test Build
+                    <input type="radio" name="phase" value="runphase">Test  <br>
+                    Date Range:<select name="dates">
+                        <option value = "second"> by second </option>
+                        <option value = "minute"> by minute </option>
+                        <option value = "hour"> by hour </option>
+                        <option value = "day"> by day </option>
+                        <option value = "month"> by month </option>
+                        <option value = "year"> by year </option>
+                        <option value = "today"> today </option>
+                        <option value = "yesterday"> yesterday </option>
+                        <option value = "12hrs"> past 12 hours </option>
+                        <option value = "24hrs"> past 24 hours </option>
+                        <option value = "2days"> past 2 days </option>
+                        <option value = "3days"> past 3 days </option>
+                        <option value = "1week"> past 1 week </option>
+                        <option value = "2weeks"> past 2 weeks </option>
+                    </select> <br>
+                    Date Range <input  type="date">
+                    Time <input type="time">
+                    <option>
+                </form>
+            </div>
+            <div>
+                <form>
+
+                </form>
+            </div>
+
+        </div>
+
+         <button type="button" id="remove">
+             Delete Last Column
+         </button>
+
+        <div id="container" style="width: auto; margin: 10px auto;">
+            <table id="example" class="display" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th rowspan="2"> Org </th>
+                    <th rowspan="2"> Platform Name </th>
+                    <th rowspan="2"> Hardware </th>
+                    <th rowspan="2"> OS </th>
+                    <th rowspan="2"> MPI Name </th>
+                    <th rowspan="2"> MPI Version </th>
+                    <th colspan="2"> MPI Install </th>
+                    <th colspan="2"> Test Build </th>
+                    <th colspan="5"> Test Run </th>
+                </tr>
+                <tr>
+                    <!--MPI Install-->
+                    <th>Pass</th>
+                    <th>Fail</th>
+                    <!--Test Build-->
+                    <th>Pass</th>
+                    <th>Fail</th>
+                    <!--Test Run-->
+                    <th>Pass</th>
+                    <th>Fail</th>
+                    <th>Skip</th>
+                    <th>Timed</th>
+                    <th>Perf</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+        <script src="js/main.js"></script>
+        <script></script>
+    </body>
+</html>
