@@ -6,6 +6,9 @@ DROP TABLE IF EXISTS submit CASCADE;
 CREATE TABLE submit (
     submit_id           serial,
 
+    -- Tmp while converting from old data
+    old_submit_id       int DEFAULT -999,
+
     -- Current Max: 95 chars
     hostname            varchar(128) NOT NULL DEFAULT 'bogus',
     -- Current Max: 8 chars
@@ -19,8 +22,10 @@ CREATE TABLE submit (
 );
 
 -- An invlid row in case we need it
-INSERT INTO submit VALUES ('0', 'undef', 'undef', 'undef', 'undef');
+INSERT INTO submit VALUES ('0', DEFAULT, 'undef', 'undef', 'undef', 'undef');
 
+DROP INDEX IF EXISTS idx_submit_old_id;
+CREATE INDEX idx_submit_old_id on submit(old_submit_id);
 
 --
 -- Collect 'results' data into a table for easy updating
@@ -64,6 +69,9 @@ CREATE TABLE results_fields (
 DROP TABLE IF EXISTS mpi_install CASCADE;
 CREATE TABLE mpi_install (
     mpi_install_id      serial,
+
+    -- Tmp while converting from old data
+    old_mpi_install_id       int DEFAULT -999,
 
     -- -----------------------------
     -- Parent Reference
@@ -146,6 +154,9 @@ INSERT INTO mpi_install
     TIMESTAMP '2006-11-01'
    );
 
+DROP INDEX IF EXISTS idx_mpi_install_old_id;
+CREATE INDEX idx_mpi_install_old_id on mpi_install(old_mpi_install_id);
+
 
 --
 -- Test Build Table
@@ -154,6 +165,9 @@ INSERT INTO mpi_install
 DROP TABLE IF EXISTS test_build CASCADE;
 CREATE TABLE test_build (
     test_build_id       serial,
+
+    -- Tmp while converting from old data
+    old_test_build_id       int DEFAULT -999,
 
     -- -----------------------------
     -- Parent Reference
@@ -206,6 +220,8 @@ INSERT INTO test_build
     TIMESTAMP '2006-11-01'
    );
 
+DROP INDEX IF EXISTS idx_test_build_old_id;
+CREATE INDEX idx_test_build_old_id on test_build(old_test_build_id);
 
 --
 -- Test Run Table
@@ -214,6 +230,9 @@ INSERT INTO test_build
 DROP TABLE IF EXISTS test_run CASCADE;
 CREATE TABLE test_run (
     test_run_id         serial,
+
+    -- Tmp while converting from old data
+    old_test_run_id       int DEFAULT -999,
 
     -- -----------------------------
     -- Parent Reference

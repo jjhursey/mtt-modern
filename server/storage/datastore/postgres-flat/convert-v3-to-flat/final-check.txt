@@ -1,0 +1,14 @@
+select COUNT(submit_id) as submit_tuples from submit;
+select submit_id from submit limit 5;
+
+select COUNT(mpi_install) as mpi_install_tuples from mpi_install;
+select mpi_install_id, old_mpi_install_id from mpi_install limit 5;
+
+select COUNT(test_build) as test_build_tuples from test_build;
+select test_build_id, old_test_build_id from test_build limit 5;
+
+select COUNT(test_run) as test_run_tuples from test_run;
+select test_run_id, old_test_run_id  from test_run limit 5;
+
+select pg_size_pretty(pg_database_size('mttv3')) as mttv3_size;
+select pg_size_pretty(pg_database_size('mttflat')) as mttflat_size;
