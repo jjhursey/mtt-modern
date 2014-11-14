@@ -16,7 +16,7 @@
       "Test run Timed",
       "Test run Perf"
     ],
-    "data": [
+    "values": [
         [
             "cisco",
             "cisco-community",

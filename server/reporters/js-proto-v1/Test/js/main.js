@@ -7,8 +7,11 @@ $(document).ready(function() {
 
     var table = $('#example').DataTable({
         "dom": 'C<"clear">Rlfrtip',
-//        "ajax": "ajax/data/pretty.json",
-        "ajax": "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json",
+        "ajax": {
+//            url: "ajax/data/pretty.json",
+            url: "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json",
+            dataSrc: "values"
+        },
         "columnDefs": [ {
             "visible": false,
             "targets": -1
@@ -16,6 +19,10 @@ $(document).ready(function() {
 
         "colVis": {
             exclude: [],
+            restore: "Restore",
+            showAll: "Show All",
+            showNone: "Show None",
+
             groups: [
                 {
                     title: "MPI Install",
@@ -35,49 +42,50 @@ $(document).ready(function() {
             "label": function ( index, title, th ) {
                 var count = 0;
 
-//                if(title == "pass"){
-//                    count++;
-//                }
-//
-//                if(title == "pass" || title == "fail"){
-//                    return title + " - " + count;
-//                } else {
-//                    return title;
-//                }
-
-                switch( index ){
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                        return title;
-                        break;
-                    case 6:
-                    case 7:
-                        return "MPI Install: " + title;
-                        break;
-                    case 8:
-                    case 9:
-                        return "Test Build: " + title;
-                        break;
-                    case 10:
-                    case 11:
-                    case 12:
-                    case 13:
-                        return "Test Run: " + title;
-                        break;
-                    default:
-                        return title;
-                        break;
+                if( title == "Pass" ){
+                    count++;
                 }
+
+                if( title == "Pass" || title == "Fail" ){
+                    return title + " - " + count;
+                } else {
+                    return title;
+                }
+                //TODO: Make label dynamic
+
+//                switch( index ){
+//                    case 0:
+//                    case 1:
+//                    case 2:
+//                    case 3:
+//                    case 4:
+//                    case 5:
+//                        return title;
+//                        break;
+//                    case 6:
+//                    case 7:
+//                        return "MPI Install: " + title;
+//                        break;
+//                    case 8:
+//                    case 9:
+//                        return "Test Build: " + title;
+//                        break;
+//                    case 10:
+//                    case 11:
+//                    case 12:
+//                    case 13:
+//                        return "Test Run: " + title;
+//                        break;
+//                    default:
+//                        return title;
+//                        break;
+//                }
             },
 
             stateChange: function (iColumn, bVisibile){
                 console.log(iColumn + " : " + bVisibile);
 
-                //if column is being hidden
+//                if column is being hidden
                 if( !bVisibile ){
                     console.log("This is the data in column to the left of the column that is now hidden");
                     var test = table
