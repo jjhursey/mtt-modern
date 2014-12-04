@@ -2,6 +2,7 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="css/dataTables.colReorder.css">
@@ -17,6 +18,9 @@
 
 
     <link rel="stylesheet" href="css/main.css">
+    <link href="css/multi-select.css" media="screen" rel="stylesheet" type="stylesheet">
+
+</head>
 
 
     <body>
@@ -57,14 +61,16 @@
 
         </div>
 
-         <button type="button" id="remove">
-             Delete Last Column
+        <select multiple="multiple" id="my-select"> /* Dynamically filled  */</select>
+
+         <button type="button" id="show-hide">
+             Show/Hide Columns
          </button>
 
         <div id="container" style="width: auto; margin: 10px auto;">
             <table id="example" class="display" cellspacing="0" width="100%">
                 <thead>
-                <tr>
+                <tr id = "headers" >
                     <th rowspan="2"> Org </th>
                     <th rowspan="2"> Platform Name </th>
                     <th rowspan="2"> Hardware </th>
@@ -93,6 +99,6 @@
             </table>
         </div>
         <script src="js/main.js"></script>
-        <script></script>
+        <script src="js/jquery.multi-select.js"></script>
     </body>
 </html>

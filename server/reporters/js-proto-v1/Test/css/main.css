@@ -9,3 +9,9 @@
 #phases {
     margin: 0px;
 }
+
+.custom-header {
+    text-align: center;
+    color: #ffffff;
+    background: black;
+}
