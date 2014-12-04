@@ -8,8 +8,8 @@ $(document).ready(function() {
     var hideColList = [];
     var showColList = [];
     var colList =  [];
-    var url = "ajax/data/pretty.json";
-    //            url: "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json",
+    //var url = "ajax/data/pretty.json";
+    var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
