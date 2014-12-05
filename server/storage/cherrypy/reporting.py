@@ -4,6 +4,7 @@ import os, os.path
 
 import random
 import string
+import json
 
 import ConfigParser
 import summary
@@ -46,7 +47,37 @@ class Reporting(object):
              </p>
              <ul>
                <li>Server Fields: <a href=\"fields\">Click here</a>
+               <li>
+               <table border="1">
+                 <tr>
+                   <th><a href=\"summary\">All Phases</a></th>
+                   <th>Install</th>
+                   <th>Test Build</th>
+                   <th>Test Run</th>
+                 </tr>
+                 <tr>
+                   <td>Install</td>
+                   <td><a href=\"summary?phase=install\">Click</a></td>
+                   <td><a href=\"summary?phase=install,test_build\">Click</a></td>
+                   <td><a href=\"summary?phase=install,test_run\">Click</a></td>
+                 </tr>
+                 <tr>
+                   <td>Test Build</td>
+                   <td></td>
+                   <td><a href=\"summary?phase=test_build\">Click</a></td>
+                   <td><a href=\"summary?phase=test_build,test_run\">Click</a></td>
+                 </tr>
+                 <tr>
+                   <td>Test Run</td>
+                   <td></td>
+                   <td></td>
+                   <td><a href=\"summary?phase=test_run\">Click</a></td>
+                 </tr>
+               </table>
                <li>Summary Data: <a href=\"summary\">Click here</a>
+               <li>Summary Data (install): <a href=\"summary?phase=install\">Click here</a>
+               <li>Summary Data (test_build): <a href=\"summary?phase=test_build\">Click here</a>
+               <li>Summary Data (test_run): <a href=\"summary?phase=test_run\">Click here</a>
              </ul>
            </body>
            </html>"""
@@ -57,7 +88,7 @@ class Reporting(object):
     #
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def fields(self,phase="all"):
+    def fields(self, phase="all"):
         return summary.fields(self.db_settings, cherrypy.session);
 
     #
@@ -65,14 +96,28 @@ class Reporting(object):
     #
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def summary(self,phase="all"):
-        cherrypy.session['phase'] = phase
+    @cherrypy.tools.json_in()
+    def summary(self, phases="all"):
+        data = {}
+        
+        # If they sent JSON data, then use that
+        if hasattr(cherrypy.request, "json"):
+            data = cherrypy.request.json
+            phases = data["phases"]
+            print "DEBUG: " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': '))
+        # Otherwise build it from the parameters
+        else:
+            data["phases"] = phases
+            
+        print "DEBUG: (Phase) = \""+ ",".join(phases) +"\""
+
+        cherrypy.session['phases'] = phases
 
         rtn = self.check_settings()
         if None != rtn:
             return rtn
         
-        rtn = summary.index(self.db_settings, cherrypy.session);
+        rtn = summary.index(self.db_settings, cherrypy.session, data);
         
         return rtn;
 

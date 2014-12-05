@@ -15,7 +15,9 @@ my $do_test_build;
 my $do_test_run = 0;
 #my $do_test_run;
 
-my $restrict_test_run = "start_timestamp >= '3-01-2014' AND start_timestamp < '6-01-2014'";
+my $restrict_test_run;
+#$restrict_test_run = "start_timestamp >= '1-01-2012' AND start_timestamp < '6-01-2012'";
+$restrict_test_run = "start_timestamp < '1-01-2012'";
 
 my $do_pushover_every = 20; # Percentage completed to pushover a message (leave blank if none)
 my $pushover_message = "MTT Convert Update:";
@@ -57,6 +59,9 @@ else {
     $dbh_mttv3     = DBI->connect("dbi:Pg:dbname=".$mtt_db_v3,   $mtt_user, $mtt_password);
     $dbh_mttflat   = DBI->connect("dbi:Pg:dbname=".$mtt_db_flat, $mtt_user, $mtt_password);
 }
+$dbh_mttv3->{RaiseError} = 1;
+$dbh_mttflat->{AutoCommit} = 0; # BEGIN a transaction
+$dbh_mttflat->{RaiseError} = 1;
 
 my $mttv3_stmt;
 my $mttflat_stmt;
@@ -100,10 +105,11 @@ if( defined($do_submit) ) {
     system("date");
 
     convert_submit();
+    $dbh_mttflat->commit;
 
     system("date");
     $time_end = time();
-    print "Elapsed: " . (strftime("\%H:\%M:\%S", gmtime( $time_end - $time_start ))) . "\n";
+    print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
 }
 else {
     print "Skipped... \t submit\n";
@@ -118,10 +124,11 @@ if( defined($do_mpi_install) ) {
     system("date");
 
     convert_mpi_install();
+    $dbh_mttflat->commit;
 
     system("date");
     $time_end = time();
-    print "Elapsed: " . (strftime("\%H:\%M:\%S", gmtime( $time_end - $time_start ))) . "\n";
+    print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
 }
 else {
     print "Skipped... \t mpi_install\n";
@@ -136,10 +143,11 @@ if( defined($do_test_build) ) {
     system("date");
 
     convert_test_build();
+    $dbh_mttflat->commit;
 
     system("date");
     $time_end = time();
-    print "Elapsed: " . (strftime("\%H:\%M:\%S", gmtime( $time_end - $time_start ))) . "\n";
+    print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
 }
 else {
     print "Skipped... \t test_build\n";
@@ -154,10 +162,11 @@ if( defined($do_test_run) ) {
     system("date");
 
     convert_test_run();
+    $dbh_mttflat->commit;
 
     system("date");
     $time_end = time();
-    print "Elapsed: " . (strftime("\%H:\%M:\%S", gmtime( $time_end - $time_start ))) . "\n";
+    print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
 }
 else {
     print "Skipped... \t test_run\n";
@@ -172,7 +181,9 @@ print "--- DONE...\n";
 print "-"x50 . "\n";
 
 $time_all_end = time();
-print "Total Elapsed: " . (strftime("\%d \%H:\%M:\%S", gmtime( $time_all_end - $time_all_start ))) . "\n";
+my $el = get_time_diff_as_str($time_all_start, $time_all_end);
+print "Total Elapsed: " . $el . "\n";
+system("$pushover_script $pushover_message All Done in \"$el\"");
 
 exit 0;
 
@@ -228,7 +239,7 @@ sub convert_submit() {
             print ".";
         }
         if( $counter % ($progress_loop*$progress_lw) == 0 ) {
-            my $elapsed = strftime("\%H:\%M:\%S", gmtime( time() - $time_start ));
+            my $elapsed = get_time_diff_as_str($time_start, time());
             printf(" = %10d (%s)\n", $counter, $elapsed);
         }
     }
@@ -352,7 +363,7 @@ sub convert_mpi_install() {
             print ".";
         }
         if( $counter % ($progress_loop*$progress_lw) == 0 ) {
-            my $elapsed = strftime("\%H:\%M:\%S", gmtime( time() - $time_start ));
+            my $elapsed = get_time_diff_as_str($time_start, time());
             printf(" = %10d of %10s (%s)\n", $counter, $total_rows, $elapsed);
         }
     }
@@ -480,7 +491,7 @@ sub convert_test_build() {
             print ".";
         }
         if( $counter % ($progress_loop*$progress_lw) == 0 ) {
-            my $elapsed = strftime("\%H:\%M:\%S", gmtime( time() - $time_start ));
+            my $elapsed = get_time_diff_as_str($time_start, time());
             printf(" = %10d of %10s (%s)\n", $counter, $total_rows, $elapsed);
         }
     }
@@ -495,7 +506,7 @@ sub convert_test_run() {
     my $total_rows = 0;
     my $current_num_rows = 0;
 
-    my $current_limit = 100000;
+    my $current_limit = 200000;
     my $current_offset = 0;
 
     my $last_mpi_install_id = -1;
@@ -504,7 +515,9 @@ sub convert_test_run() {
     print "\n";
     print "-"x50 . "\n";
     print "--- Converting the table: test_run\n";
+    print "    Range: $restrict_test_run\n";
     print "-"x50 . "\n";
+
     $progress_loop = 1000;
 
     #----------------------------------------------------------
@@ -525,6 +538,8 @@ sub convert_test_run() {
     }
 
     printf("Processing %10d rows...\n", $total_rows);
+    sleep(2);
+    printf("-----------------------\n");
 
 
     $mttv3_stmt = $dbh_mttv3->prepare(
@@ -577,6 +592,11 @@ sub convert_test_run() {
         printf("Extracting original values... (iteration = %4d)\n", $current_iteration);
 
         $mttv3_stmt->execute($current_limit, $current_offset);
+        if( 0 != $mttv3_stmt->err ) {
+            print "Error: (".$mttv3_stmt->err.") Fatal! ".$mttv3_stmt->errstr."\n";
+            $dbh_mttflat->rollback;
+            exit(-1);
+        }
         $current_num_rows = $mttv3_stmt->rows;
 
         if( $current_num_rows <= 0 ) {
@@ -585,7 +605,7 @@ sub convert_test_run() {
         }
 
         #----------------------------------------------------------
-        printf("Starting conversion... (iter. = %3d, rows = %4d [%10d,    %10d])\n",
+        printf("Starting conversion...  (iter. = %3d, rows = %4d [%10d,    %10d])\n",
                $current_iteration, $current_num_rows, $current_limit, $current_offset);
         while(my $mttv3_row_ref = $mttv3_stmt->fetchrow_arrayref ) {
             #
@@ -657,14 +677,16 @@ sub convert_test_run() {
                 print ".";
             }
             if( $counter % ($progress_loop*$progress_lw) == 0 ) {
-                my $elapsed = strftime("\%d \%H:\%M:\%S", gmtime( time() - $time_start ));
+                my $elapsed = get_time_diff_as_str($time_start, time());
                 printf(" = %10d of %10s (%s) [%5.1f%%]\n",
                        $counter, $total_rows, $elapsed, $current_percentage);
             }
             if( defined($do_pushover_every) ) {
                 if( $current_percentage >= $last_reported_percentage + $do_pushover_every ) {
+                    my $elapsed = get_time_diff_as_str($time_start, time());
+                    my $perc_str = sprintf("%4.1f", $current_percentage);
                     $last_reported_percentage += $do_pushover_every;
-                    system("$pushover_script $pushover_message $current_percentage");
+                    system("$pushover_script $pushover_message \"".$perc_str."%\" in \"$elapsed\"");
                 }
             }
         }
@@ -674,4 +696,16 @@ sub convert_test_run() {
         $current_offset += $current_limit;
         $current_iteration += 1;
     }
+}
+
+sub get_time_diff_as_str() {
+    my $t1 = shift(@_);
+    my $t2 = shift(@_);
+    my $str;
+    my $time_str = strftime("\%H:\%M:\%S", gmtime( $t2 - $t1 ));
+    my $day_str = int(strftime("\%d", gmtime( $t2 - $t1 ))) - 1;
+    
+    $str = sprintf("%d day(s) %s", $day_str, $time_str);
+
+    return $str;
 }
