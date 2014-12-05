@@ -5,15 +5,28 @@
 
 $(document).ready(function() {
 
+    var colList =  [];
     var hideColList = [];
     var showColList = [];
-    var colList =  [];
+
+    var checkCols =
+        [
+            "Org",
+            "Platform name",
+            "Hardware",
+            "OS",
+            "MPI Name",
+            "MPI Version"
+        ];
+
     //var url = "ajax/data/pretty.json";
     var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
+     ****************************************************
         Table Configuration
+     ****************************************************
      */
     var table = $('#example').DataTable({
         "dom": 'C<"clear">Rlfrtip',
@@ -84,18 +97,17 @@ $(document).ready(function() {
 
     });
 
-
     //TODO: dynamic table headers
-
     function setHeaders( columnName ){
         //var input = "<th rowspan=\"2\">" + columnName + "</th>";
         //$( "#example" ).append( input );
     }
 
 
-
     /*
-        MultiSelect Initialization
+     ****************************************************
+      MultiSelect Initialization
+     ****************************************************
      */
 
     $.ajax({
@@ -113,24 +125,20 @@ $(document).ready(function() {
             buildSelect();
         });
 
-
     function fillColList(){
-
         for( var i = 0; i < colList.length; i++  ) {
             var name = colList[i];
             var input = "<option value\"" + name + "\">" + name + "</option>";
             $('#my-select').append( input );
         }
-
-        console.log( table.data()[0][0]  );
     }
 
 
-
     /*
-        MultiSelect Configuration
+     ****************************************************
+      MultiSelect Configuration
+     ****************************************************
      */
-
     function buildNewArray ( values, arr ){
         var tmpArray = arr;
         arr = [];
@@ -145,80 +153,54 @@ $(document).ready(function() {
 
     }
 
-  function  buildSelect(){
+    function  buildSelect(){
       $('#my-select').multiSelect({
           selectableHeader: "<div class='custom-header'> Show Columns </div>",
           selectionHeader: "<div class='custom-header'> Hide Columns </div>",
 
           afterSelect: function( values ){
-              //Recreate show array
-              console.log("Show:");
+              //push and recreate
               showColList = buildNewArray( values, showColList );
-
-              showColList.forEach( function(entry) {
-                  console.log(entry);
-              });
-
-              //Push to hidden array
-              console.log("Hide:");
               hideColList.push( values.toString() );
-
-              hideColList.forEach( function(entry) {
-                  console.log(entry);
-              });
           },
 
           afterDeselect: function( values ){
-              //Push to show array
-              console.log("Now Show:");
+              //push and recreate
               showColList.push( values.toString() );
-
-              showColList.forEach( function(entry) {
-                  console.log(entry);
-              });
-
-              //Recreate hidden array
-              console.log("Now Hide:");
               hideColList = buildNewArray( values, hideColList );
-
-              hideColList.forEach( function(entry) {
-                  console.log(entry);
-              });
           }
 
       });
   }
 
-    //TODO: convert strings to indexes
-    function getIndexes(){
-        //for( var i = 0; i < colList.length){
-        //
-        //}
-    }
-
     //TODO: Aggregate data
-    //TODO: implement button to toggle visibility
+    //TODO: fix extra test/fails
     function toggleCols(){
+        console.log( table.search( "OS" ) );
 
-        //for( var i = 0; i < showColList() ){
-        //
-        //}
+        for( var i = 0; i < colList.length; i++ ){
+            var selected = table.column(i).header();
 
-            //for all columns in show
-                //find column - make visible true
-            //for all columns in hide
-                //find column - make visible false
+            for( var j = 0; j < showColList.length; j++ ){
+                if( $(selected).html() === showColList[j] ){
+                    table.columns(i).visible( true );
+                }
+            }
 
-        for( var i = 0; i < table.columns; i++ ){
+            for( var k = 0; k < hideColList.length; k++ ){
+                if( $(selected).html() === hideColList[k] ){
+                    table.columns(i).visible( false );
+                    aggregateData();
+                }
+            }
 
         }
+    }
+
+    function aggregateData(){
 
 
     }
-
-
-
-
 
 
 
@@ -236,23 +218,9 @@ $(document).ready(function() {
         alert( "Hey! I was hit!!!" );
     } );
 
-    $('#show-hide').click( function () {
-        //hideColList.forEach( function(entry){
-        //   console.log( entry );
-        //});
-        fillColList();
+    $('#show-hide').click( function(){
+        toggleCols();
     } );
-
-
-
-
-    //dropdown checkbox select
-    //populate with current columns
-    //
-
-
-
-
 
 
 });
