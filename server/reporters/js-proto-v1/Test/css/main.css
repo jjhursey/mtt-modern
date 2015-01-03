@@ -1,17 +1,83 @@
 #main {
-    margin-bottom: 20px;
+    margin: auto;
+    border: 1px solid black;
+    overflow: auto;
+    width: auto;
+    font-size: 14px;
+    background-color: orange;
 }
 
-#main, #main div {
+#leftcolumn {
+    margin: 5px;
+    float:left;
+    width: 450px;
     border: 1px solid black;
+    background-color: lightgreen;
+}
+
+#center {
+    margin: auto;
+    float:left;
+    /*border: 1px solid black;*/
+    background-color: lightseagreen;
+}
+
+#rightcolumn {
+    float: left;
+    text-align: center;
+    margin: 5px;
+    background-color: lightblue;
 }
 
 #phases {
-    margin: 0px;
+    /*margin: 5px;*/
+    border-bottom: 1px solid black;
 }
 
+#search {
+    width: auto;
+    margin: auto;
+    padding: 5px;
+}
+
+#search table {
+    /*min-width: 400px;*/
+}
+
+#table {
+    width: auto;
+    margin: 50px auto auto;
+}
+
+#toolbar {
+    width: auto;
+    height: 30px;
+    text-align: center;
+    border: 1px solid black;
+    background-color: lightcoral;
+}
+
+.primary {
+    height: 30px;
+}
+
+.primary:hover {
+    background-color: lightgray;
+
+}
+
+.secondary {
+    height: 20px;
+}
+
+.secondary:hover {
+    background-color: lightgray;
+}
+
+/* For multi-select */
 .custom-header {
     text-align: center;
     color: #ffffff;
     background: black;
 }
+

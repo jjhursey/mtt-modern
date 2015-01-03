@@ -9,18 +9,16 @@ $(document).ready(function() {
     var hideColList = [];
     var showColList = [];
 
-    var checkCols =
-        [
-            "Org",
-            "Platform name",
-            "Hardware",
-            "OS",
-            "MPI Name",
-            "MPI Version"
-        ];
 
-    //var url = "ajax/data/pretty.json";
-    var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
+    //TODO: make checkCols dynamic
+    //currently column names - needs to populate based on string/int check
+    var stringCols = [];
+    var intCols = [];
+
+    var showStrColList = [];
+
+    var url = "ajax/data/pretty.json";
+    //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
@@ -61,7 +59,6 @@ $(document).ready(function() {
                 }
             ],
 
-
             "label": function ( index, title, th ) {
                 var count = 0;
 
@@ -75,23 +72,6 @@ $(document).ready(function() {
                     return title;
                 }
                 //TODO: Make label dynamic
-            },
-
-            stateChange: function (iColumn, bVisibile){
-                console.log(iColumn + " : " + bVisibile);
-
-//                if column is being hidden
-                if( !bVisibile ){
-                    console.log("This is the data in column to the left of the column that is now hidden");
-                    var test = table
-                        .column( --iColumn)
-                        .data
-                        .reduce( function( a, b ) {
-
-                    });
-                    console.log( test );
-                }
-
             }
         }
 
@@ -103,6 +83,181 @@ $(document).ready(function() {
         //$( "#example" ).append( input );
     }
 
+    /*
+     ****************************************************
+      Search Initialization
+     ****************************************************
+     */
+    function filterGlobal () {
+        $('#example').DataTable().search(
+            $('#global_filter').val(),
+            $('#global_regex').prop('checked'),
+            $('#global_smart').prop('checked')
+        ).draw();
+    }
+
+    function filterColumn ( i ) {
+        $('#example').DataTable().column( i ).search(
+            $('#col'+i+'_filter').val(),
+            $('#col'+i+'_regex').prop('checked'),
+            $('#col'+i+'_smart').prop('checked')
+        ).draw();
+    }
+
+    $('input.global_filter').on( 'keyup click', function () {
+        filterGlobal();
+    } );
+
+    $('input.column_filter').on( 'keyup click', function () {
+        filterColumn( $(this).parents('tr').attr('data-column') );
+    } );
+
+    //phase extra search
+
+    function phaseChange( phase ){
+        for(var i = 7; i < 11; i++){
+            $( ('#filter_col' + i) ).remove();
+        }
+
+        //addColumn
+        //update show/hide
+        //reload table
+
+
+        switch( phase ){
+            case "all":;
+                break;
+            case "install":
+                addCenter( "install" );
+                break;
+            case "build":
+                addCenter( "build" );
+                break;
+            case "run":
+                addCenter( "run" );
+                break;
+            default:
+                break;
+        }
+    }
+
+    function addCenter( phase ){
+        var newColumn = "";
+            //" <div id='center'> " +
+                //"<table cellpadding='1' cellspacing='0' border='0'>" +
+            //        "<thead>" +
+            //            "<tr>" +
+            //                "<th>Target</th>" +
+            //                "<th>Search text</th>" +
+            //                "<th>Regex</th>" +
+            //                "<th>Smart</th>" +
+            //            "</tr>" +
+            //        "</thead>" +
+            //        "<tbody>";
+
+        switch( phase ){
+            case "all":
+                break;
+            case "install":
+                newColumn +=
+                    "<tr id='filter_col7' data-column='6'>" +
+                        "<td> Configure arguments </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col8' data-column='7'>" +
+                        "<td> Compiler </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col9' data-column='8'>" +
+                        "<td> Bitness </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col10' data-column='9'>" +
+                        "<td> Endian </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
+                    "</tr>"
+                ;
+
+                //newColumn += "</tbody></table></div>";
+                //$( '#leftcolumn').after( newColumn );
+                $( '#search table').append( newColumn );
+                break;
+            case "build":
+                newColumn +=
+                    "<tr id='filter_col7' data-column='6'>" +
+                        "<td> Suite </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col8' data-column='7'>" +
+                        "<td> Compiler </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col9' data-column='8'>" +
+                        "<td> Compiler version </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col10' data-column='9'>" +
+                        "<td> Bitness </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
+                    "</tr>"
+                ;
+
+                //newColumn += "</tbody></table></div>";
+                //$( '#leftcolumn').after( newColumn );
+                $( '#search table').append( newColumn );
+                break;
+            case "run":
+                newColumn +=
+                    "<tr id='filter_col7' data-column='6'>" +
+                        "<td> Suite </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col8' data-column='7'>" +
+                        "<td> Test </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col9' data-column='8'>" +
+                        "<td> np </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
+                    "</tr>" +
+                    "<tr id='filter_col10' data-column='9'>" +
+                        "<td> Command </td>" +
+                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
+                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
+                    "</tr>"
+                ;
+
+                //newColumn += "</tbody></table></div>";
+                //$( '#leftcolumn').after( newColumn );
+                $( '#search table').append( newColumn );
+                break;
+            default:
+                break;
+        }
+    }
 
     /*
      ****************************************************
@@ -120,6 +275,15 @@ $(document).ready(function() {
                   colList.push( data.fields[i] );
                   showColList.push( data.fields[i] );
               }
+
+            //TODO: check string/int columns
+            for( var i = 0; i < colList.length; i++ ){
+                if( i < 6 ){
+                    stringCols.push( colList[i] );
+                } else {
+                    intCols.push( colList[i] );
+                }
+            }
 
             fillColList();
             buildSelect();
@@ -150,10 +314,9 @@ $(document).ready(function() {
         });
 
         return arr;
-
     }
 
-    function  buildSelect(){
+    function buildSelect(){
       $('#my-select').multiSelect({
           selectableHeader: "<div class='custom-header'> Show Columns </div>",
           selectionHeader: "<div class='custom-header'> Hide Columns </div>",
@@ -173,37 +336,137 @@ $(document).ready(function() {
       });
   }
 
+
+    //fill with strings that are both in strCols and showCols
+    function fillShowStrColList(){
+        for( var i = 0; i < showColList.length; i++) {
+            if( stringCols.indexOf( showColList[i] ) >= 0 ){
+                showStrColList.push( showColList[i] );
+            }
+        }
+
+        showStrColList.sort( function( a,b ){ return a-b; } )
+    }
+
     //TODO: Aggregate data
     //TODO: fix extra test/fails
+    //NOTE: extra test/fails with have additional text in showColList and hideColList than colList
     function toggleCols(){
-        console.log( table.search( "OS" ) );
+        showStrColList = [];
+        var aggregate = false;
+        var wait = false;
+
 
         for( var i = 0; i < colList.length; i++ ){
             var selected = table.column(i).header();
 
             for( var j = 0; j < showColList.length; j++ ){
                 if( $(selected).html() === showColList[j] ){
-                    table.columns(i).visible( true );
+                    var column = table.column(i);
+                    if( column.visible() === false ) {
+                        table.ajax.reload( aggregateData );
+                    }
+                    column.visible(true);
                 }
             }
 
             for( var k = 0; k < hideColList.length; k++ ){
                 if( $(selected).html() === hideColList[k] ){
-                    table.columns(i).visible( false );
-                    aggregateData();
+                    var column = table.column(i);
+                    if( column.visible() === true ){
+                        aggregate = true;
+                    }
+                    column.visible( false );
                 }
             }
 
         }
+
+        fillShowStrColList();
+        if( aggregate ) {
+            aggregateData();
+        }
     }
 
+    //TODO: reload with cache
     function aggregateData(){
+        var skiprows = [];
+        var deleterows = [];
 
+        console.log("hit");
 
+        table.rows().iterator('row', function( context, index ){
+            console.log("hit");
+            var rrow;
+            var lrow;
+            var lstring = "";
+            var rstring = "";
+
+            //grab left hand of comparison
+            lrow = this.row( index );
+
+            for(var i = 0; i < showStrColList.length; i++ ){
+                lstring += this.row( index ).data()[ colList.indexOf( showStrColList[i] ) ] + ", ";
+            }
+
+            console.log(lstring);
+            //grab right hand of comparison
+            table.rows().iterator( 'row', function( content, index2 ){
+                console.log( index2 + "  > " + index );
+                if( index2 > index ) {
+                    rrow = this.row(index2);
+                    rstring = "";
+
+                    for (var i = 0; i < showStrColList.length; i++) {
+                        rstring += this.row(index2).data()[ colList.indexOf( showStrColList[i] ) ] + ", ";
+                    }
+
+                    //compare
+                    console.log(lstring + " vs " + rstring );
+                    if ( lstring === rstring && skiprows.indexOf( lstring ) < 0 ) {
+                        //make new dataset
+                        var newData = lrow.data();
+
+                        //for all int columns add them up!
+                        for (var i = 0; i < intCols.length; i++) {
+                            var idx = colList.indexOf(intCols[i]);
+                            newData[idx] = parseInt( newData[idx] ) + parseInt( rrow.data()[idx] );
+                        }
+
+                        lrow.data(newData);
+                        //console.log("PUSH TO DELETE: " + rrow.data() );
+                        deleterows.push( index2 );
+
+                    }
+                }
+
+            });
+
+            if( skiprows.indexOf( lstring ) < 0 ){
+                //console.log("BANISHING: " + lstring);
+                skiprows.push( lstring );
+            }
+        });
+
+        //delete rows
+        deleterows.sort( function( a,b ){ return a-b; } )
+
+        for( var i = deleterows.length - 1; i >= 0; i-- ){
+            console.log("DELETING:" + i + ": " + table.row( deleterows[i] ).data());
+            table.row( deleterows[i] ).remove();
+        }
+
+        table.draw();
     }
 
 
+    /*
+     ****************************************************
+     Event Listeners
+     ****************************************************
+     */
 
+    //Row selection
     $('#example tbody').on( 'click', 'tr', function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
@@ -214,13 +477,18 @@ $(document).ready(function() {
         }
     } );
 
-    $( 'button[ name = "Change columns" ]' ).on( 'click', function(){
-        alert( "Hey! I was hit!!!" );
-    } );
-
+    //Column show/hide toggle
     $('#show-hide').click( function(){
         toggleCols();
     } );
+
+    //radio buttons
+    $( "input[type=radio][name=phase]" ).on( 'change', function (){
+        if( $(this).is(':checked') ) {
+            phaseChange( $(this).attr('value') );
+        }
+    });
+
 
 
 });
