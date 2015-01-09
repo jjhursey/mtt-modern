@@ -6,6 +6,8 @@ import random
 import string
 import json
 
+import datetime
+
 import ConfigParser
 import summary
 
@@ -99,25 +101,78 @@ class Reporting(object):
     @cherrypy.tools.json_in()
     def summary(self, phases="all"):
         data = {}
+        start_time = datetime.datetime.now()
+        end_time = datetime.datetime.now()
+
+        print "m" * 80
+        print "m" * 80
+        print "m" * 80
+        print "mmmm  New Summary Request"
+        print "m" * 80
         
+        print "-" * 70
+        print "Preprocess parameters"
         # If they sent JSON data, then use that
         if hasattr(cherrypy.request, "json"):
             data = cherrypy.request.json
-            phases = data["phases"]
-            print "DEBUG: " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': '))
+            if "phases" not in data:
+                rtn = { "fields" : None, "values" : None, "timing" : str(datetime.datetime.now() - start_time) }
+                rtn['status'] = -1
+                rtn['status_msg'] = "Error: Parameter 'phases' not supplied."
+                return rtn
+            if len(data["phases"]) == 0:
+                phases = []
+                phases.append( "all" )
+                data["phases"] = phases
+            elif type(data["phases"]) is not list:
+                phases = []
+                phases.append( data["phases"] )
+                data["phases"] = phases
+            else:
+                phases = data["phases"]
+            print "Type: %s" %( type(data["phases"]) )
+            print "(All) = " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': '))
         # Otherwise build it from the parameters
         else:
             data["phases"] = phases
             
-        print "DEBUG: (Phase) = \""+ ",".join(phases) +"\""
-
+        print "(Phase) = \""+ ",".join(phases) +"\""
+        
         cherrypy.session['phases'] = phases
 
-        rtn = self.check_settings()
-        if None != rtn:
+        #
+        # Check settings for DB connection
+        #
+        print "-" * 70
+        print "Check settings"
+        rtn_msg = self.check_settings()
+        if None != rtn_msg:
+            rtn = { "fields" : None, "values" : None, "timing" : str(datetime.datetime.now() - start_time) }
+            rtn['status'] = -1
+            rtn['status_msg'] = "Server " + rtn_msg
+            return rtn
+
+        #
+        # Validate the search parameters
+        #
+        print "-" * 70
+        print "Validate Parameters"
+        rtn = summary.validate_search_parameters(self.db_settings, cherrypy.session, data)
+        if rtn['status'] != 0:
             return rtn
         
-        rtn = summary.index(self.db_settings, cherrypy.session, data);
+        #
+        # Perform the search
+        #
+        print "-" * 70
+        print "Perform search"
+        rtn = summary.index(self.db_settings, cherrypy.session, data)
+        
+        rtn['status'] = 0
+        rtn['status_msg'] = 'Success'
+        rtn['timing'] = str(datetime.datetime.now() - start_time)
+
+        #print "(Final) " + json.dumps(rtn, sort_keys=True, indent=4, separators=(',',': '))
         
         return rtn;
 

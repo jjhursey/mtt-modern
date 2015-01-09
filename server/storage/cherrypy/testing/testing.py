@@ -54,8 +54,21 @@ def post_summary():
     s = requests.Session()
 
     headers = {'content-type': 'application/json'}
+
+
+    payload = {}
+
+    payload['phases'] = []
+    payload['phases'].append( 'install' )
+
+    payload['columns'] = []
+    payload['columns'].append( 'mpi_name' )
+
+    payload['search'] = {}
+    payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
+    payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
+
     
-    payload = {'phases': 'install'}
     url = base_url + "/summary"
     print "URL: " + url
     
@@ -97,7 +110,6 @@ def post_complex_summary(phase="install"):
     payload['columns'].append('mpi_version')
     payload['columns'].append('compiler_name')
 
-    
     ###############################
     # What are the search parameters
     ###############################
@@ -136,7 +148,8 @@ def post_complex_summary(phase="install"):
 
     # MPI Name
     payload['search']['mpi_name'] = 'ompi-v1.8'
-    
+
+
     url = base_url + "/summary"
     print "URL: " + url
     
@@ -145,18 +158,21 @@ def post_complex_summary(phase="install"):
     print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
     result = r.json()
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
-    print "Length: " + str( len(result["values"]) )
+    
+    if result["values"] != None:
+        print "Length: " + str( len(result["values"]) )
 
 
 ################################################################
 # Main Program
 ################################################################
+get_fields()
 #get_summary()
 #post_summary()
 #post_complex_summary("install")
 #post_complex_summary("test_build")
 #post_complex_summary("test_run")
-post_complex_summary("all")
+#post_complex_summary("all")
 
 print "-" * 70
 
