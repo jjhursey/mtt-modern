@@ -15,129 +15,228 @@
     <script type="text/javascript" charset="utf8" src="//datatables.net/release-datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
     <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.min.js"></script>
 
+    <!-- Typeahead -->
+    <script type="text/javascript" charset="utf8" src="js/typeahead.js"></script>
 
+    <!--Moment-->
+    <script type="text/javascript" charset="utf8" src="js/moment.js"></script>
+    <script type="text/javascript" charset="utf8" src="js/moment-with-locales.js"></script>
 
     <link rel="stylesheet" href="css/main.css">
     <link href="css/multi-select.css" media="screen" rel="stylesheet" type="stylesheet">
 
 </head>
-
-
     <body>
 
-    <!--Top-->
-        <div id="main">
-            <div id = "leftcolumn">
-                <div id="phases">
-                        <form>
-                            <input type="radio" name="phase" value="all" checked >All Phases
-                            <input type="radio" name="phase" value="install">MPI-Install
-                            <input type="radio" name="phase" value="build">Test Build
-                            <input type="radio" name="phase" value="run">Test Run
-                            <br>
-                                Date Range:
-                                <select name="dates">
-                                    <option value = "today"> today </option>
-                                    <option value = "yesterday"> yesterday </option>
-                                    <option value = "12hrs"> past 12 hours </option>
-                                    <option value = "24hrs" selected> past 24 hours </option>
-                                    <option value = "2days"> past 2 days </option>
-                                    <option value = "3days"> past 3 days </option>
-                                    <option value = "1week"> past 1 week </option>
-                                    <option value = "2weeks"> past 2 weeks </option>
-                                </select>
-                                <select name="dates">
-                                    <option value = "second"> by second </option>
-                                    <option value = "minute"> by minute </option>
-                                    <option value = "hour"> by hour </option>
-                                    <option value = "day"> by day </option>
-                                    <option value = "month"> by month </option>
-                                    <option value = "year"> by year </option>
-                                </select>
+    <!--TOP-->
+    <div id="topbar" >
+        <select name="phases">
+            <option value="all" selected >All Phases</option>
+            <option value="install" >MPI Install</option>
+            <option value="build" >Test Build</option>
+            <option value="run" >Test Run</option>
+        </select>
+        <input type="image" src="img\sql-16.png" id="sql" >
+        <input type="image" src="img\funnel-16.png" id="filter">
+        <input type="image" src="img\gear-16.png" id="settings">
+        <input type="text" class="global_filter" id="global_filter" placeholder="Global Search">
+        <label for="global_filter" id="glass">Search</label>
+    </div>
 
-                            <br>
-                            <!--Date Range <input  type="date"> Time <input type="time">-->
-                            <option>
-                        </form>
-                    </div>
-                <div id = "search">
-                    <table cellpadding="1" cellspacing="0" border="0">
-                        <thead>
+    <!--SQL-->
+    <div class="extend" id="sqlbox" >
+        <div id="columnwrapper" >
+            <div class="col1">
+                <table cellpadding="1" cellspacing="0" border="0" >
+                    <tr>
+                        <td>Date Range</td>
+                        <td>
+                            <input class="typeahead" id="dates" type="text" value="" placeholder="Date Range">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Org</td>
+                        <td><input type="text" id="org" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Local Username</td>
+                        <td><input type="text" id="localusername" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display2">
+                                <option value = "show"> Show </option>
+                                <option value = "hide" selected > Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Platform Name</td>
+                        <td><input type="text" id="platform_name" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hardware</td>
+                        <td><input type="text" id="platform_hardware" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>OS</td>
+                        <td><input type="text" id="os_name" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>MPI Name</td>
+                        <td><input type="text" id="mpi_name" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>MPI Version</td>
+                        <td><input type="text" id="mpi_version" name="sqltext" value="all" ><br></td>
+                        <td align="center" >
+                            <select name = "display">
+                                <option value = "show"> Show </option>
+                                <option value = "hide"> Hide </option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col2" ></div>
+            <div class="col3" ></div>
+            <div class="col4" ></div>
+        </div>
+        <div class="toolbarwrapper">
+            <div class ="sqltoolbars" id="sqltoolbar1" >
+                <button class="secondary" value="startover" > Start Over </button>
+                <button class="primary" value="summary"> Summary </button>
+                <button class="primary" > Details </button>
+                <button class="primary" > Performance </button>
+            </div>
+            <div class ="sqltoolbars" id="sqltoolbar2" ></div>
+        </div>
+    </div>
+
+    <!--Filter-->
+    <div class="extend" id="filterbox">
+        <div class="col1">
+            <form name="filter">
+                <table cellpadding="1" cellspacing="0" border="0">
+                    <thead>
                         <tr>
                             <th>Target</th>
                             <th>Search text</th>
                             <th>Regex</th>
                             <th>Smart</th>
                         </tr>
-                        </thead>
+                    </thead>
 
-                        <tbody>
-                        <tr id="filter_global">
-                            <td>Global search</td>
-                            <td align="center"><input type="text" class="global_filter" id="global_filter"></td>
-                            <td align="center"><input type="checkbox" class="global_filter" id="global_regex"></td>
-                            <td align="center"><input type="checkbox" class="global_filter" id="global_smart" checked="checked"></td>
-                        </tr>
+                    <tbody>
                         <tr id="filter_col1" data-column="0">
                             <td> Org </td>
-                            <td align="center"><input type="text" class="column_filter" id="col0_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col0_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col0_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col0_smart" checked="checked"></td>
                         </tr>
+                        <tr id="placeholder" data-column="0">
+                            <td> Local Username </td>
+                            <td align="center"><input type="text" ></td>
+                            <td align="center"><input type="checkbox" ></td>
+                            <td align="center"><input type="checkbox" checked="checked"></td>
+                        </tr>
                         <tr id="filter_col2" data-column="1">
                             <td> Platform Name </td>
-                            <td align="center"><input type="text" class="column_filter" id="col1_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col1_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col1_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col1_smart" checked="checked"></td>
                         </tr>
                         <tr id="filter_col3" data-column="2">
                             <td> Hardware </td>
-                            <td align="center"><input type="text" class="column_filter" id="col2_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col2_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col2_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col2_smart" checked="checked"></td>
                         </tr>
                         <tr id="filter_col4" data-column="3">
                             <td> OS </td>
-                            <td align="center"><input type="text" class="column_filter" id="col3_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col3_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col3_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col3_smart" checked="checked"></td>
                         </tr>
                         <tr id="filter_col5" data-column="4">
                             <td> MPI name </td>
-                            <td align="center"><input type="text" class="column_filter" id="col4_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col4_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col4_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col4_smart" checked="checked"></td>
                         </tr>
                         <tr id="filter_col6" data-column="5">
                             <td> MPI version </td>
-                            <td align="center"><input type="text" class="column_filter" id="col5_filter"></td>
+                            <td align="center"><input type="text" class="column_filter" id="col5_filter" ></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col5_regex"></td>
                             <td align="center"><input type="checkbox" class="column_filter" id="col5_smart" checked="checked"></td>
                         </tr>
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        <div class="col2" ></div>
+        <div class="col3" >
+            <select multiple="multiple" id="my-select"> <!-- Dynamically filled --> </select>
+        </div>
+        <div class="col4" ></div>
+        <div class="toolbarwrapper">
+            <div class="filtertoolbars" id="filtertoolbar1" >
+                <button type="button" value="clearf"> Clear Fields </button>
+                <button type="button" value="resetf"> Reset Form </button>
+                <button type="button" value="toggler"> Toggle Regex </button>
+                <button type="button" value="toggles"> Toggle Smart<!-- ness --> </button>
             </div>
-
-            <div id="rightcolumn" >
-                <select multiple="multiple" id="my-select"> /* Dynamically filled  */</select>
+            <div class="filtertoolbars" id="filtertoolbar2" ></div>
+            <div class="filtertoolbars" id="filtertoolbar3" >
                 <button type="button" id="show-hide"> Show/Hide Columns </button>
             </div>
-
+            <div class="filtertoolbars" id="filtertoolbar4" ></div>
         </div>
-    <div id="toolbar" >
-        <button type="button" class="secondary" > Reset Form </button>
-        <button type="button" class="secondary" > Start Over </button>
-        <button type="button" class="primary" > Summary </button>
-        <button type="button" class="primary"> Details </button>
-        <button type="button" class="primary"> Performance </button>
-        <button type="button" class="secondary" > Preferences </button>
-        <button type="button" class="secondary" > Advanced </button>
+    </div>
+
+    <!--Settings-->
+    <div class="extend" id="settingsbox">
+        <div class="col1" >
+            Text wrap <br>
+            Show trial runs
+        </div>
+        <div class="col2" ></div>
+        <div class="col3" ></div>
+        <div class="col4" ></div>
+        <div class="toolbarwrapper"></div>
     </div>
 
     <!--Bottom-->
         <div id="table" style="width: auto; margin: 10px auto;">
-            <table id="example" class="display" cellspacing="0" width="100%">
+            <table id="example" class="display compact" cellspacing="0" width="100%">
                 <thead>
                 <tr id = "headers" >
                     <th rowspan="2">Org</th>

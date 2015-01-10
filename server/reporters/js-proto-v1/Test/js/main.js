@@ -11,14 +11,13 @@ $(document).ready(function() {
 
 
     //TODO: make checkCols dynamic
-    //currently column names - needs to populate based on string/int check
     var stringCols = [];
     var intCols = [];
 
     var showStrColList = [];
 
-    //var url = "ajax/data/pretty.json";
-    var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
+    var url = "ajax/data/pretty.json";
+    //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
@@ -27,7 +26,8 @@ $(document).ready(function() {
      ****************************************************
      */
     var table = $('#example').DataTable({
-        "dom": 'C<"clear">Rlfrtip',
+        //"dom": 'C<"clear">Rlrtip',   l = amount per page
+        "dom": '<"top">Rrtp<"bottom"li><"clear">',
         "ajax": {
             url: url,
             dataSrc: "values"
@@ -104,159 +104,126 @@ $(document).ready(function() {
         ).draw();
     }
 
-    $('input.global_filter').on( 'keyup click', function () {
-        filterGlobal();
-    } );
-
-    $('input.column_filter').on( 'keyup click', function () {
-        filterColumn( $(this).parents('tr').attr('data-column') );
-    } );
-
     //phase extra search
-
     function phaseChange( phase ){
-        for(var i = 7; i < 11; i++){
-            $( ('#filter_col' + i) ).remove();
-        }
-
-        //addColumn
-        //update show/hide
-        //reload table
-
+        removeTables();
 
         switch( phase ){
             case "all":;
                 break;
             case "install":
-                addCenter( "install" );
+                addTables( "install" );
                 break;
             case "build":
-                addCenter( "build" );
+                addTables( "build" );
                 break;
             case "run":
-                addCenter( "run" );
+                addTables( "run" );
+                break;
+            default:
+                break;
+        }
+
+        //addTables
+        //update show/hide
+        //reload table
+    }
+
+    function removeTables(){
+        $( '.col2 > table' ).remove();
+    }
+
+    function addTables( phase ){
+        var newColumns;
+        var sqlTable = "<table cellpadding='1' cellspacing='0' border='0'>" +
+                            "<tr class='blankrow' ></tr>";
+        var advTable;
+
+        var filterTable =
+                "<table cellpadding='1' cellspacing='0' border='0'>" +
+                    "<thead> <tr> <th>Target</th> <th>Search Text</th> <th>Regex</th> <th>Smart</th> </tr> </thead>" +
+                    "<tbody>";
+
+        switch( phase ){
+            case "all":
+                break;
+            case "install":
+                newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
+
+
+                sqlTable = buildSqlTableString( newColumns, sqlTable );
+                filterTable = buildFilterTableString( newColumns, filterTable  );
+
+                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
+                $( 'div#filterbox > .col2' ).append( filterTable );
+                $( 'div #filtertoolbar2').append( '&nbsp;' );
+
+                break;
+            case "build":
+                newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
+
+
+                sqlTable = buildSqlTableString( newColumns, sqlTable )
+                filterTable = buildFilterTableString( newColumns, filterTable );
+
+                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
+                $( 'div#filterbox > .col2' ).append( filterTable );
+                $( 'div #filtertoolbar2').append( '&nbsp;' );
+
+                break;
+            case "run":
+                newColumns = [ "Suite", "Test", "np", "Command" ];
+
+                sqlTable = buildSqlTableString( newColumns, sqlTable );
+                filterTable = buildFilterTableString( newColumns, filterTable );
+
+                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
+                $( 'div#filterbox > .col2' ).append( filterTable );
+                $( 'div #filtertoolbar2').append( '&nbsp;' );
+
                 break;
             default:
                 break;
         }
     }
 
-    function addCenter( phase ){
-        var newColumn = "";
-            //" <div id='center'> " +
-                //"<table cellpadding='1' cellspacing='0' border='0'>" +
-            //        "<thead>" +
-            //            "<tr>" +
-            //                "<th>Target</th>" +
-            //                "<th>Search text</th>" +
-            //                "<th>Regex</th>" +
-            //                "<th>Smart</th>" +
-            //            "</tr>" +
-            //        "</thead>" +
-            //        "<tbody>";
-
-        switch( phase ){
-            case "all":
-                break;
-            case "install":
-                newColumn +=
-                    "<tr id='filter_col7' data-column='6'>" +
-                        "<td> Configure arguments </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col8' data-column='7'>" +
-                        "<td> Compiler </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col9' data-column='8'>" +
-                        "<td> Bitness </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col10' data-column='9'>" +
-                        "<td> Endian </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
-                    "</tr>"
-                ;
-
-                //newColumn += "</tbody></table></div>";
-                //$( '#leftcolumn').after( newColumn );
-                $( '#search table').append( newColumn );
-                break;
-            case "build":
-                newColumn +=
-                    "<tr id='filter_col7' data-column='6'>" +
-                        "<td> Suite </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col8' data-column='7'>" +
-                        "<td> Compiler </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col9' data-column='8'>" +
-                        "<td> Compiler version </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col10' data-column='9'>" +
-                        "<td> Bitness </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
-                    "</tr>"
-                ;
-
-                //newColumn += "</tbody></table></div>";
-                //$( '#leftcolumn').after( newColumn );
-                $( '#search table').append( newColumn );
-                break;
-            case "run":
-                newColumn +=
-                    "<tr id='filter_col7' data-column='6'>" +
-                        "<td> Suite </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col6_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col6_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col8' data-column='7'>" +
-                        "<td> Test </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col7_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col7_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col9' data-column='8'>" +
-                        "<td> np </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col8_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col8_smart' checked='checked'></td>" +
-                    "</tr>" +
-                    "<tr id='filter_col10' data-column='9'>" +
-                        "<td> Command </td>" +
-                        "<td align='center'><input type='text' class='column_filter' id='col9_filter'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_regex'></td>" +
-                        "<td align='center'><input type='checkbox' class='column_filter' id='col9_smart' checked='checked'></td>" +
-                    "</tr>"
-                ;
-
-                //newColumn += "</tbody></table></div>";
-                //$( '#leftcolumn').after( newColumn );
-                $( '#search table').append( newColumn );
-                break;
-            default:
-                break;
+    function buildSqlTableString( newColumns, table ){
+        for( var i = 7; i < 11; i++ ){
+            table +=
+                "<tr>" +
+                    "<td>" + newColumns[ i-7 ] + "</td>" +
+                    "<td align='center'>" +
+                    "<td> <input type='text' name='sqltext' value='all' > </td>" +
+                    "<td>" +
+                        "<select name = 'display'>" +
+                            "<option value='show'> Show </option>" +
+                            "<option value='hide'> Hide </option>" +
+                        "</select>" +
+                    "</td>" +
+                "</tr>"
+            ;
         }
+        return table;
+    }
+
+    function buildFilterTableString( newColumns, table ){
+        for( var i = 7; i < 11; i++ ){
+            var dc = "" + (i - 1);
+            var id1 = "filter_col" + i;
+            var id2 = "col" + i + "_filter";
+            var id3 = "col" + i + "_regex";
+            var id4 = "col" + i + "_smart";
+
+
+            table +=
+                "<tr id='" + id1 + "' data-column='" + dc + "'>" +
+                "<td> " + newColumns[ i-7 ] + " </td>" +
+                "<td align='center'><input type='text' class='column_filter' id='" + id2 + "'></td>" +
+                "<td align='center'><input type='checkbox' class='column_filter' id='" + id3 + "'></td>" +
+                "<td align='center'><input type='checkbox' class='column_filter' id='" + id4 + "' checked='checked'></td>" +
+                "</tr>";
+        }
+        return table;
     }
 
     /*
@@ -300,7 +267,7 @@ $(document).ready(function() {
 
     /*
      ****************************************************
-      MultiSelect Configuration
+      MultiSelect and Aggregation Configuration
      ****************************************************
      */
     function buildNewArray ( values, arr ){
@@ -351,52 +318,58 @@ $(document).ready(function() {
     //TODO: Aggregate data
     //TODO: fix extra test/fails
     //NOTE: extra test/fails with have additional text in showColList and hideColList than colList
-    function toggleCols(){
+    function toggleCols() {
+        console.time( " Total Completion Time" );
+
         showStrColList = [];
         var aggregate = false;
-        var wait = false;
+        var refresh = false;
 
 
-        for( var i = 0; i < colList.length; i++ ){
+        for (var i = 0; i < colList.length; i++) {
             var selected = table.column(i).header();
 
-            for( var j = 0; j < showColList.length; j++ ){
-                if( $(selected).html() === showColList[j] ){
+            for (var j = 0; j < showColList.length; j++) {
+                if ($(selected).html() === showColList[j]) {
                     var column = table.column(i);
-                    if( column.visible() === false ) {
-                        table.ajax.reload( aggregateData );
+                    if (column.visible() === false) {
+                        refresh = true;
                     }
                     column.visible(true);
                 }
             }
 
-            for( var k = 0; k < hideColList.length; k++ ){
-                if( $(selected).html() === hideColList[k] ){
+            for (var k = 0; k < hideColList.length; k++) {
+                if ($(selected).html() === hideColList[k]) {
                     var column = table.column(i);
-                    if( column.visible() === true ){
+                    if (column.visible() === true) {
                         aggregate = true;
                     }
-                    column.visible( false );
+                    column.visible(false);
                 }
             }
 
         }
 
         fillShowStrColList();
-        if( aggregate ) {
+        if (aggregate) {
             aggregateData();
         }
+
+        if( refresh ){
+            table.ajax.reload(aggregateData);
+        }
+
     }
 
     //TODO: reload with cache
     function aggregateData(){
+        console.time( "Time spent aggregating" );
+
         var skiprows = [];
         var deleterows = [];
 
-        console.log("hit");
-
         table.rows().iterator('row', function( context, index ){
-            console.log("hit");
             var rrow;
             var lrow;
             var lstring = "";
@@ -405,14 +378,14 @@ $(document).ready(function() {
             //grab left hand of comparison
             lrow = this.row( index );
 
-            for(var i = 0; i < showStrColList.length; i++ ){
+            for ( var i = 0; i < showStrColList.length; i++ ){
                 lstring += this.row( index ).data()[ colList.indexOf( showStrColList[i] ) ] + ", ";
             }
 
-            console.log(lstring);
+            //console.log(lstring);
             //grab right hand of comparison
             table.rows().iterator( 'row', function( content, index2 ){
-                console.log( index2 + "  > " + index );
+                //console.log( index2 + "  > " + index );
                 if( index2 > index ) {
                     rrow = this.row(index2);
                     rstring = "";
@@ -422,7 +395,7 @@ $(document).ready(function() {
                     }
 
                     //compare
-                    console.log(lstring + " vs " + rstring );
+                    //console.log(lstring + " vs " + rstring );
                     if ( lstring === rstring && skiprows.indexOf( lstring ) < 0 ) {
                         //make new dataset
                         var newData = lrow.data();
@@ -452,11 +425,102 @@ $(document).ready(function() {
         deleterows.sort( function( a,b ){ return a-b; } )
 
         for( var i = deleterows.length - 1; i >= 0; i-- ){
-            console.log("DELETING:" + i + ": " + table.row( deleterows[i] ).data());
+            //console.log("DELETING:" + i + ": " + table.row( deleterows[i] ).data());
             table.row( deleterows[i] ).remove();
         }
 
         table.draw();
+        console.timeEnd( "Time spent aggregating" );
+        console.timeEnd( " Total Completion Time" );
+    }
+
+
+    /*
+     ****************************************************
+     Extra button functions
+     ****************************************************
+     */
+
+    function toggleCheckbox( selector ){
+        if( $( selector ).is(':checked') ){
+            $( selector ).prop('checked', false);
+        } else {
+            $( selector ).prop('checked', true);
+        }
+    }
+
+
+
+    /*
+     ****************************************************
+     Date Range
+     ****************************************************
+     */
+
+    //typeahead
+    var substringMatcher = function(strs) {
+        return function findMatches(q, cb) {
+            var matches, substrRegex;
+
+            // an array that will be populated with substring matches
+            matches = [];
+
+            // regex used to determine if a string contains the substring `q`
+            substrRegex = new RegExp(q, 'i');
+
+            // iterate through the pool of strings and for any string that
+            // contains the substring `q`, add it to the `matches` array
+            $.each(strs, function(i, str) {
+                if (substrRegex.test(str)) {
+                    // the typeahead jQuery plugin expects suggestions to a
+                    // JavaScript object, refer to typeahead docs for more info
+                    matches.push({ value: str });
+                }
+            });
+
+            cb(matches);
+        };
+    };
+
+    var dates = [
+        'today', 'yesterday', 'past 12 hours', 'past 24 hours',
+        'past 2 days', 'past 3 days', 'past week', 'past 2 weeks'
+    ];
+
+    $('.typeahead').typeahead({
+            hint: true,
+            highlight: true,
+            minLength: 1
+        },
+        {
+            name: 'dates',
+            displayKey: 'value',
+            source: substringMatcher(dates)
+        });
+
+    //moment
+    moment.invalid( );
+
+    function getDate( date ){
+        var index = dates.indexOf( date );
+
+        if( index >= 0 ){
+            var dates2 = [
+                moment().startOf('day'),
+                moment().subtract( 1, 'days' ).hours(0).minutes(0).seconds(0),
+                moment().subtract(12, 'hours'),
+                moment().subtract(24, 'hours'),
+                moment().subtract( 2, 'days' ),
+                moment().subtract( 3, 'days' ),
+                moment().subtract( 7, 'days' ),
+                moment().subtract( 14, 'days' )
+            ];
+
+            return dates2[ index ].format('YYYY-MM-DD hh:mm:ss');
+        } else {
+            return Moment(date).format('YYYY-MM-DD hh:mm:ss');
+        }
+
     }
 
 
@@ -466,28 +530,186 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //Row selection
-    $('#example tbody').on( 'click', 'tr', function () {
+    //filters
+    $('input.global_filter').on( 'keyup click', function () {
+        filterGlobal();
+    } );
+
+    $('input.column_filter').on( 'keyup click focus', function () {
+        filterColumn( $(this).parents('tr').attr('data-column') );
+    } );
+
+
+    //CSS Row selection
+    var tableSelector = '#example tbody';
+    $( tableSelector ).on( 'click', 'tr', function () {
+        table.$('tr.selected').removeClass('selected');
+        $(this).addClass('selected');
+    } );
+
+    $( tableSelector ).on( 'dblclick', 'tr', function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
         }
-        else {
-            table.$('tr.selected').removeClass('selected');
-            $(this).addClass('selected');
+    });
+
+    //Drill Down - grab td cell data
+    $( tableSelector ).on( 'click', 'td', function () {
+        table.$('td.selected').removeClass('selected');
+        $(this).addClass('selected');
+
+        if( !$('#filterbox').is(":visible") ){
+            $( '#settingsbox').hide( "slow" );
+            $( '#sqlbox').hide("slow");
+            $( '#filterbox').show( "slow" );
+        }
+
+        var id = "#col" + $(this).index() + "_filter";
+
+        if( $(id).val() === table.cell(this).data() ){
+            $(id).val("");
+            $(id).focus();
+        } else {
+            $(id ).val( table.cell(this).data() );
+            $(id).focus();
         }
     } );
+
+    $( tableSelector ).on( 'dblclick', 'td', function () {
+        if ( $(this).hasClass('selected') ) {
+            $(this).removeClass('selected');
+        }
+    });
+
+
 
     //Column show/hide toggle
     $('#show-hide').click( function(){
         toggleCols();
+        console.log(" ");
     } );
 
-    //radio buttons
-    $( "input[type=radio][name=phase]" ).on( 'change', function (){
-        if( $(this).is(':checked') ) {
-            phaseChange( $(this).attr('value') );
+    //Phase Selection
+    $( "select[name=phases]").on( 'change', function(){
+            phaseChange( $( "select option:selected").attr('value') );
+    });
+
+
+    //Window Selection
+    $('#sql').on( 'click', function(){
+        if( $( '#sqlbox').is(":visible") ){
+            $( '#sqlbox').hide("slow");
+        } else {
+            $( '#filterbox').hide( "slow" );
+            $( '#settingsbox').hide( "slow" );
+            $( '#sqlbox').show("slow");
         }
     });
+
+    $('#filter').on( 'click', function(){
+        if( $('#filterbox').is(":visible") ){
+            $( '#filterbox').hide( "slow" );
+        } else {
+            $( '#settingsbox').hide( "slow" );
+            $( '#sqlbox').hide("slow");
+            $( '#filterbox').show( "slow" );
+        }
+    });
+
+    $('#settings').on( 'click', function(){
+        if( $('#settingsbox').is(":visible") ){
+            $( '#settingsbox').hide( "slow" );
+        } else {
+            $( '#sqlbox').hide("slow");
+            $( '#filterbox').hide( "slow" );
+            $( '#settingsbox').show( "slow" );
+        }
+    });
+
+    //SQL buttons
+
+    $('#sqltoolbar1 > button[value=startover]').on( 'click', function(){
+        $( 'select[name^=dates] option[value="24hrs"]').attr("selected","selected");
+
+        $( 'input[name=sqltext]').val('all');
+
+        $( 'select[name^=display] option[value=show]').attr("selected","selected");
+        $( 'select[name^=display2] option[value=hide]').attr("selected","selected");
+            //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
+    });
+
+    $( 'button[value=summary]' ).on( 'click', function(){
+        var date = $( 'input[id=dates]' ).val();
+        var endTime = moment().format('YYYY-MM-DD hh:mm:ss');
+
+        if( moment(date).isValid() ){
+            var startTime = getDate( date );
+            console.log("Date Range: " + startTime + " to " + endTime );
+        } else {
+            console.log( "Invalid Date" );
+        }
+
+        //console.log( "Org: " + $( 'input[id=org]' ).val() );
+        //console.log( "Local Username: " + $( 'input[id=localusername]' ).val() );
+        //console.log( "Platform Name: " + $( 'input[id=platform_name]' ).val() );
+        //console.log( "Hardware: " + $( 'input[id=platform_hardware]' ).val() );
+        //console.log( "OS: " + $( 'input[id=os_name]' ).val() );
+        //console.log( "MPI Name: " + $( 'input[id=mpi_name]' ).val() );
+        //console.log( "MPI Version: " + $( 'input[id=mpi_version]' ).val() );
+
+
+    });
+
+
+    //Filter buttons
+    $( 'button[value=clearf]' ).on( 'click', function(){
+        $( 'input[type=text][class=column_filter]' ).val('').focus().blur();
+    });
+    $( 'button[value=toggler]' ).on( 'click', function(){
+        toggleCheckbox( 'input[type=checkbox][class=column_filter][id*=regex]' );
+    });
+    $( 'button[value=toggles]' ).on( 'click', function(){
+        toggleCheckbox( 'input[type=checkbox][class=column_filter][id*=smart]' );
+    });
+    $( 'button[value=resetf]' ).on( 'click', function(){
+        $( 'input[type=text][class=column_filter]' ).val('').focus().blur();
+        $( 'input[type=checkbox][class=column_filter][id*=regex]').prop("checked", false);
+        $( 'input[type=checkbox][class=column_filter][id*=smart]').prop("checked", true);
+    });
+
+
+    //Preference buttons
+
+
+
+
+    /*
+     ****************************************************
+     Performance
+     ****************************************************
+     */
+
+    SpeedTest.prototype = {
+        startTest: function(){
+            var beginTime, endTime;
+            beginTime = +new Date();
+
+            this.testImplement( this.testParams );
+            endTime = +new Date();
+
+            timeSpent = endTime - beginTime;
+
+            return console.log( timeSpent + "(" + this.testedFunction + ")"  );
+        }
+    }
+
+    function SpeedTest( testImplement, testParams, testedFunction ) {
+        this.testImplement = testImplement;
+        this.testParams = testParams;
+        this.testedFunction = testedFunction;
+    }
+
+    //var aggregateTest = new SpeedTest(  )
 
 
 

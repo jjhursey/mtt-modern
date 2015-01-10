@@ -81,3 +81,217 @@
     background: black;
 }
 
+/*Drilldown*/
+
+table.dataTable tbody td.selected {
+    background-color: #bec9df;
+}
+
+
+/* new design */
+
+#topbar {
+
+}
+
+#global_filter {
+    background: transparent;
+    background: rgba(163, 135, 106, 0.15);
+    background-clip: padding-box;
+
+    font-family: Arial;
+    font-size: medium;
+
+    border: none;
+    border-radius:         26px;
+    -moz-border-radius:    26px;
+    -o-border-radius:      26px;
+    -webkit-border-radius: 26px;
+
+    box-shadow:         inset 0 0 5px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 255, 255, 0.3);
+    -moz-box-shadow:    inset 0 0 5px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 255, 255, 0.3);
+    -o-box-shadow:      inset 0 0 5px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 255, 255, 0.3);
+    -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 255, 255, 0.3);
+
+    color: black;
+    height: 26px;
+    outline: none;
+    margin: 5px;
+    padding: 0 20px 0 35px;
+
+    transition:         all .1s linear;
+    -moz-transition:    all .1s linear;
+    -o-transition:      all .1s linear;
+    -webkit-transition: all .1s linear;
+
+    width: 80%;
+}
+
+#global_filter:focus {
+    background: transparent;
+    background: rgba(163, 135, 106, 0.2);
+
+    box-shadow:         inset 0 0 5px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 255, 255, 0.5);
+    -moz-box-shadow:    inset 0 0 5px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 255, 255, 0.5);
+    -o-box-shadow:      inset 0 0 5px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 255, 255, 0.5);
+    -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 255, 255, 0.5);
+}
+
+#glass {
+    background: transparent url(http://f.cl.ly/items/2a2Z0V0L0J1p3V082d3r/icon-search.png) no-repeat top left;
+    cursor: pointer;
+    display: block;
+    height: 17px;
+    left: 166px;
+    position: relative;
+    text-indent: -99999px;
+    top: -26px;
+    width: 16px;
+}
+
+.extend {
+    width: auto;
+    height:200px;
+    padding: 10px;
+
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+
+    -webkit-box-shadow: inset -10px -10px 50px -17px rgba(0,0,0,0.75);
+    -moz-box-shadow: inset -10px -10px 50px -17px rgba(0,0,0,0.75);
+    box-shadow: inset -10px -10px 50px -17px rgba(0,0,0,0.75);
+
+    font-family: Arial;
+}
+
+.col1, .col2, .col3, .col4 {
+    float:left;
+    margin-right: 10px;
+    width: 25%;
+}
+
+.toolbarwrapper{
+    margin: auto;
+    overflow: auto;
+    clear: both;
+}
+
+#sqlbox{
+    background-color: lightcoral;
+}
+
+    .blankrow { height: 20px !important; }
+    #showrow { text-align: center; }
+
+    #columnwrapper{  }
+
+    .sqltoolbars{
+        width: 50%;
+        text-align: center;
+    }
+
+#filterbox{
+    display:none;
+    background-color: lightgreen;
+}
+
+    .filtertoolbars{
+        width: 25%;
+        text-align: center;
+        float: left;
+    }
+
+
+#settingsbox{
+    display:none;
+    background-color: lightskyblue;
+}
+
+.ms-list {
+    height: 150px !important;
+}
+
+/*
+/*
+*/
+span.twitter-typeahead .tt-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 160px;
+    padding: 5px 0;
+    margin: 2px 0 0;
+    list-style: none;
+    font-size: 14px;
+    text-align: left;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    background-clip: padding-box;
+}
+span.twitter-typeahead .tt-suggestion > p {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: normal;
+    line-height: 1.42857143;
+    color: #333333;
+    white-space: nowrap;
+}
+span.twitter-typeahead .tt-suggestion > p:hover,
+span.twitter-typeahead .tt-suggestion > p:focus {
+    color: #ffffff;
+    text-decoration: none;
+    outline: 0;
+    background-color: #428bca;
+}
+span.twitter-typeahead .tt-suggestion.tt-cursor {
+    color: #ffffff;
+    background-color: #428bca;
+}
+span.twitter-typeahead {
+    width: 100%;
+}
+.input-group span.twitter-typeahead {
+    display: block !important;
+}
+.input-group span.twitter-typeahead .tt-dropdown-menu {
+    top: 32px !important;
+}
+.input-group.input-group-lg span.twitter-typeahead .tt-dropdown-menu {
+    top: 44px !important;
+}
+.input-group.input-group-sm span.twitter-typeahead .tt-dropdown-menu {
+    top: 28px !important;
+}
