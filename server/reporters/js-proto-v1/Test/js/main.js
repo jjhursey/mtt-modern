@@ -16,8 +16,8 @@ $(document).ready(function() {
 
     var showStrColList = [];
 
-    var url = "ajax/data/pretty.json";
-    //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
+    //var url = "ajax/data/pretty.json";
+    var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
