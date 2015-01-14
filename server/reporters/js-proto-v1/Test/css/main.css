@@ -205,8 +205,22 @@ table.dataTable tbody td.selected {
     background-color: lightcoral;
 }
 
-    .blankrow { height: 20px !important; }
+    .blankrow { height: 25px !important; }
     #showrow { text-align: center; }
+
+    #datetd1{
+        margin-right: 500px;
+        width:119px;
+    }
+
+    #startdate , #enddate {
+        text-align: center;
+        width: 65px;
+    }
+
+    #reldate {
+        width: 102px;
+    }
 
     #columnwrapper{  }
 

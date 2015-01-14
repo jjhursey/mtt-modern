@@ -3,7 +3,61 @@
  * Last Edited: 11/6/14
  */
 
-$(document).ready(function() {
+$(document).ready(function start() {
+
+    /*
+     ****************************************************
+     REST INTERFACE
+     ****************************************************
+     */
+
+
+    $('button[value=perf]').on( 'click', function() { makeRequest('http://138.49.196.178:9090/fields') });
+
+    var httpRequest;
+
+    function makeRequest(url) {
+        if (window.XMLHttpRequest) { // Mozilla, Safari, ...
+            httpRequest = new XMLHttpRequest();
+        } else if (window.ActiveXObject) { // IE
+            try {
+                httpRequest = new ActiveXObject("Msxml2.XMLHTTP");
+            }
+            catch (e) {
+                try {
+                    httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                catch (e) {}
+            }
+        }
+
+        if (!httpRequest) {
+            alert('Giving up :( Cannot create an XMLHTTP instance');
+            return false;
+        }
+        httpRequest.onreadystatechange = alertContents;
+        httpRequest.open('GET', url);
+        httpRequest.send();
+    }
+
+    function alertContents() {
+        if (httpRequest.readyState === 4) {
+            if (httpRequest.status === 200) {
+                alert(httpRequest.responseText);
+            } else {
+                alert('There was a problem with the request. ' + httpRequest.status);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     var colList =  [];
     var hideColList = [];
@@ -16,8 +70,8 @@ $(document).ready(function() {
 
     var showStrColList = [];
 
-    //var url = "ajax/data/pretty.json";
-    var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
+    var url = "ajax/data/pretty.json";
+    //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
 
     /*
@@ -104,7 +158,12 @@ $(document).ready(function() {
         ).draw();
     }
 
-    //phase extra search
+    /*
+     ****************************************************
+     Window Selection and Phase Change
+     ****************************************************
+     */
+
     function phaseChange( phase ){
         removeTables();
 
@@ -134,10 +193,14 @@ $(document).ready(function() {
     }
 
     function addTables( phase ){
+        var sqlCol = $( 'div#sqlbox > div#columnwrapper > .col2' );
+        var filterCol = $( 'div#filterbox > .col2' );
+        var filterToolbar = $( 'div #filtertoolbar2');
+
+
         var newColumns;
         var sqlTable = "<table cellpadding='1' cellspacing='0' border='0'>" +
                             "<tr class='blankrow' ></tr>";
-        var advTable;
 
         var filterTable =
                 "<table cellpadding='1' cellspacing='0' border='0'>" +
@@ -154,9 +217,9 @@ $(document).ready(function() {
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
                 filterTable = buildFilterTableString( newColumns, filterTable  );
 
-                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
-                $( 'div#filterbox > .col2' ).append( filterTable );
-                $( 'div #filtertoolbar2').append( '&nbsp;' );
+                sqlCol.append( sqlTable );
+                filterCol.append( filterTable );
+                filterToolbar.append( '&nbsp;' );
 
                 break;
             case "build":
@@ -166,9 +229,9 @@ $(document).ready(function() {
                 sqlTable = buildSqlTableString( newColumns, sqlTable )
                 filterTable = buildFilterTableString( newColumns, filterTable );
 
-                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
-                $( 'div#filterbox > .col2' ).append( filterTable );
-                $( 'div #filtertoolbar2').append( '&nbsp;' );
+                sqlCol.append( sqlTable );
+                filterCol.append( filterTable );
+                filterToolbar.append( '&nbsp;' );
 
                 break;
             case "run":
@@ -177,9 +240,9 @@ $(document).ready(function() {
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
                 filterTable = buildFilterTableString( newColumns, filterTable );
 
-                $( 'div#sqlbox > div#columnwrapper > .col2' ).append( sqlTable );
-                $( 'div#filterbox > .col2' ).append( filterTable );
-                $( 'div #filtertoolbar2').append( '&nbsp;' );
+                sqlCol.append( sqlTable );
+                filterCol.append( filterTable );
+                filterToolbar.append( '&nbsp;' );
 
                 break;
             default:
@@ -219,7 +282,7 @@ $(document).ready(function() {
                 "<tr id='" + id1 + "' data-column='" + dc + "'>" +
                 "<td> " + newColumns[ i-7 ] + " </td>" +
                 "<td align='center'><input type='text' class='column_filter' id='" + id2 + "'></td>" +
-                "<td align='center'><input type='checkbox' class='column_filter' id='" + id3 + "'></td>" +
+                "<td align='center'><input type='checkbox' class='column_filter' id='" + id3 + "' checked='checked'></td>" +
                 "<td align='center'><input type='checkbox' class='column_filter' id='" + id4 + "' checked='checked'></td>" +
                 "</tr>";
         }
@@ -457,70 +520,112 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //typeahead
-    var substringMatcher = function(strs) {
-        return function findMatches(q, cb) {
-            var matches, substrRegex;
+    var start = $( "#startdate" );
+    var end = $( "#enddate" );
 
-            // an array that will be populated with substring matches
-            matches = [];
+    //start.datepicker().datepicker('setDate', "-1d" );
+    //end.datepicker().datepicker('setDate', new Date() );
 
-            // regex used to determine if a string contains the substring `q`
-            substrRegex = new RegExp(q, 'i');
+    var absoluteMin = new Date(2011, 0, 1);
+    var absoluteMax = new Date(2014, 9, 29);
 
-            // iterate through the pool of strings and for any string that
-            // contains the substring `q`, add it to the `matches` array
-            $.each(strs, function(i, str) {
-                if (substrRegex.test(str)) {
-                    // the typeahead jQuery plugin expects suggestions to a
-                    // JavaScript object, refer to typeahead docs for more info
-                    matches.push({ value: str });
-                }
-            });
-
-            cb(matches);
-        };
-    };
-
-    var dates = [
-        'today', 'yesterday', 'past 12 hours', 'past 24 hours',
-        'past 2 days', 'past 3 days', 'past week', 'past 2 weeks'
-    ];
-
-    $('.typeahead').typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 1
-        },
-        {
-            name: 'dates',
-            displayKey: 'value',
-            source: substringMatcher(dates)
+    $(function() {
+        start.datepicker({
+            //defaultDate: "+1w",
+            minDate: absoluteMin,
+            maxDate: absoluteMax,
+            changeMonth: true,
+            numberOfMonths: 2,
+            onClose: function (selectedDate) {
+                end.datepicker("option", "minDate", selectedDate);
+            }
         });
+        end.datepicker({
+            //defaultDate: "+1w",
+            minDate: absoluteMin,
+            maxDate: absoluteMax,
+            changeMonth: true,
+            numberOfMonths: 2,
+            onClose: function (selectedDate) {
+                start.datepicker("option", "maxDate", selectedDate);
+            }
+        });
+    });
 
-    //moment
-    moment.invalid( );
+    function getDate( selection ){
+        var date = $( '#startdate' ).val();
 
-    function getDate( date ){
-        var index = dates.indexOf( date );
-
-        if( index >= 0 ){
-            var dates2 = [
-                moment().startOf('day'),
-                moment().subtract( 1, 'days' ).hours(0).minutes(0).seconds(0),
-                moment().subtract(12, 'hours'),
-                moment().subtract(24, 'hours'),
-                moment().subtract( 2, 'days' ),
-                moment().subtract( 3, 'days' ),
-                moment().subtract( 7, 'days' ),
-                moment().subtract( 14, 'days' )
-            ];
-
-            return dates2[ index ].format('YYYY-MM-DD hh:mm:ss');
-        } else {
-            return Moment(date).format('YYYY-MM-DD hh:mm:ss');
+        switch( selection ){
+            case "past12hrs":
+                return moment().subtract( 12, 'hours' );
+                break;
+            case "past24hrs":
+                return moment().subtract( 24, 'hours' );
+                break;
+            case "today":
+            case "yesterday":
+            case "past2days":
+            case "past3days":
+            case "pastweek":
+            case "past2weeks":
+                return moment( new Date(date) ).hours(0).minutes(0).seconds(0);
+                break;
+            case "custom":
+                //go to end of day or beginning?
+                return moment( new Date(date) );
+                break;
+            default:
+                break;
         }
+    }
 
+    function setFields( date ){
+        var now = new Date();
+        var start = $('#startdate');
+        var end = $('#enddate');
+
+        switch( date ){
+            case "today":
+                start.datepicker( 'setDate', now );
+                end.datepicker( 'setDate', now );
+                break;
+            case "yesterday":
+                start.datepicker( 'setDate', "-1d" );
+                end.datepicker( 'setDate', now );
+                break;
+            case "past12hrs":
+                if( now.getHours() <= 11 ){
+                    start.datepicker( 'setDate', "-1d" );
+                } else {
+                    start.datepicker( 'setDate', now );
+                }
+
+                end.datepicker( 'setDate', now );
+                break;
+            case "past24hrs":
+                start.datepicker( 'setDate', "-1d" );
+                end.datepicker( 'setDate', now );
+                break;
+            case "past2days":
+                start.datepicker( 'setDate', "-2d" );
+                end.datepicker( 'setDate', now );
+                break;
+            case "past3days":
+                start.datepicker( 'setDate', "-3d" );
+                end.datepicker( 'setDate', now );
+                break;
+            case "pastweek":
+                start.datepicker( 'setDate', "-1w" );
+                end.datepicker( 'setDate', now );
+                break;
+            case "past2weeks":
+                start.datepicker( 'setDate', "-2w" );
+                end.datepicker( 'setDate', now );
+                break;
+
+            default:
+                break;
+        }
     }
 
 
@@ -530,15 +635,8 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //filters
-    $('input.global_filter').on( 'keyup click', function () {
-        filterGlobal();
-    } );
 
-    $('input.column_filter').on( 'keyup click focus', function () {
-        filterColumn( $(this).parents('tr').attr('data-column') );
-    } );
-
+    //------------------DRILL DOWNS------------------
 
     //CSS Row selection
     var tableSelector = '#example tbody';
@@ -546,7 +644,6 @@ $(document).ready(function() {
         table.$('tr.selected').removeClass('selected');
         $(this).addClass('selected');
     } );
-
     $( tableSelector ).on( 'dblclick', 'tr', function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
@@ -574,7 +671,6 @@ $(document).ready(function() {
             $(id).focus();
         }
     } );
-
     $( tableSelector ).on( 'dblclick', 'td', function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
@@ -582,18 +678,12 @@ $(document).ready(function() {
     });
 
 
-
-    //Column show/hide toggle
-    $('#show-hide').click( function(){
-        toggleCols();
-        console.log(" ");
-    } );
+    //------------------UI SELECTION LISTENERS------------------
 
     //Phase Selection
-    $( "select[name=phases]").on( 'change', function(){
-            phaseChange( $( "select option:selected").attr('value') );
+    $( "select[name=phases]" ).on( 'change', function(){
+            phaseChange( $( "select[name=phases] option:selected").attr('value') );
     });
-
 
     //Window Selection
     $('#sql').on( 'click', function(){
@@ -605,7 +695,6 @@ $(document).ready(function() {
             $( '#sqlbox').show("slow");
         }
     });
-
     $('#filter').on( 'click', function(){
         if( $('#filterbox').is(":visible") ){
             $( '#filterbox').hide( "slow" );
@@ -615,7 +704,6 @@ $(document).ready(function() {
             $( '#filterbox').show( "slow" );
         }
     });
-
     $('#settings').on( 'click', function(){
         if( $('#settingsbox').is(":visible") ){
             $( '#settingsbox').hide( "slow" );
@@ -626,28 +714,35 @@ $(document).ready(function() {
         }
     });
 
-    //SQL buttons
 
-    $('#sqltoolbar1 > button[value=startover]').on( 'click', function(){
-        $( 'select[name^=dates] option[value="24hrs"]').attr("selected","selected");
+    //------------------SQL WINDOW------------------
 
-        $( 'input[name=sqltext]').val('all');
-
-        $( 'select[name^=display] option[value=show]').attr("selected","selected");
-        $( 'select[name^=display2] option[value=hide]').attr("selected","selected");
-            //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
+    //dates dropdown
+    $( 'select[name=dates]' ).on( 'change', function(){
+        var selecteddate = $( 'select[name=dates] option:selected' ).attr('value');
+        if( selecteddate != "custom" ){
+            setFields( selecteddate );
+        }
     });
 
-    $( 'button[value=summary]' ).on( 'click', function(){
-        var date = $( 'input[id=dates]' ).val();
-        var endTime = moment().format('YYYY-MM-DD hh:mm:ss');
+    end.on( 'change', function(){
+        $( 'option[value=custom]' ).prop('selected', true);
+    });
 
-        if( moment(date).isValid() ){
-            var startTime = getDate( date );
-            console.log("Date Range: " + startTime + " to " + endTime );
-        } else {
-            console.log( "Invalid Date" );
-        }
+
+    //SQL Buttons
+
+    //Summary
+    $( 'button[value=summary]' ).on( 'click', function(){
+        var requestformat =  'YYYY-MM-DD hh:mm:ss a';
+
+        var startdate = getDate( $('select[name=dates] option:selected').attr('value') );
+        var enddate = $( '#enddate' ).val();
+
+        var startMoment = startdate.format( requestformat );
+        var endMoment = moment( new Date(enddate) ).endOf('day').format( requestformat );
+
+        console.log("Date Range: " + startMoment + " to " + endMoment );
 
         //console.log( "Org: " + $( 'input[id=org]' ).val() );
         //console.log( "Local Username: " + $( 'input[id=localusername]' ).val() );
@@ -656,10 +751,37 @@ $(document).ready(function() {
         //console.log( "OS: " + $( 'input[id=os_name]' ).val() );
         //console.log( "MPI Name: " + $( 'input[id=mpi_name]' ).val() );
         //console.log( "MPI Version: " + $( 'input[id=mpi_version]' ).val() );
-
-
+        //console.log( moment.parsingFlags().invalidMonth );
     });
 
+    //start over
+    $('button[value=startover]').on( 'click', function(){
+        $( 'select[name^=dates] option[value="24hrs"]').attr("selected","selected");
+
+        $( 'input[name=sqltext]').val('all');
+
+        $( 'select[name^=display] option[value=show]').attr("selected","selected");
+        $( 'select[name^=display2] option[value=hide]').attr("selected","selected");
+        //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
+    });
+
+
+
+    //------------------FILTER WINDOW------------------
+
+    //filter fields
+    $('input.global_filter').on( 'keyup click', function () {
+        filterGlobal();
+    } );
+    $('input.column_filter').on( 'keyup click focus', function () {
+        filterColumn( $(this).parents('tr').attr('data-column') );
+    } );
+
+    //Column show/hide toggle
+    $('#show-hide').click( function(){
+        toggleCols();
+        console.log(" ");
+    } );
 
     //Filter buttons
     $( 'button[value=clearf]' ).on( 'click', function(){
@@ -679,8 +801,6 @@ $(document).ready(function() {
 
 
     //Preference buttons
-
-
 
 
     /*
