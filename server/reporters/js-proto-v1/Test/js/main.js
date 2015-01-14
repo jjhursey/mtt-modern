@@ -12,7 +12,7 @@ $(document).ready(function start() {
      */
 
 
-    $('button[value=perf]').on( 'click', function() { makeRequest('http://138.49.196.178:9090/fields') });
+    $('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
 
     var httpRequest;
 
