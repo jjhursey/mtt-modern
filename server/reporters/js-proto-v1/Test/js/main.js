@@ -174,22 +174,7 @@ $(document).ready(function() {
 
     function phaseChange( phase ){
         removeTables();
-
-        switch( phase ){
-            case "all":;
-                break;
-            case "install":
-                addTables( "install" );
-                break;
-            case "build":
-                addTables( "build" );
-                break;
-            case "run":
-                addTables( "run" );
-                break;
-            default:
-                break;
-        }
+        addTables( phase );
 
         //addTables
         //update show/hide
@@ -197,60 +182,42 @@ $(document).ready(function() {
     }
 
     function removeTables(){
+        $( '.col2' ).empty();
         $( '.col2 > table' ).remove();
     }
 
     function addTables( phase ){
         var sqlCol = $( 'div#sqlbox > div#columnwrapper > .col2' );
-        var filterCol = $( 'div#filterbox > .col2' );
-        var filterToolbar = $( 'div #filtertoolbar2');
-
 
         var newColumns;
         var sqlTable = "<table class='sqltextfields' id='table2' cellpadding='1' cellspacing='0' border='0'>" +
                             "<tr class='blankrow' ></tr>";
 
-        var filterTable =
-                "<table cellpadding='1' cellspacing='0' border='0'>" +
-                    "<thead> <tr> <th>Target</th> <th>Search Text</th> </tr> </thead>" +
-                    "<tbody>";
-
         switch( phase ){
             case "all":
+                sqlCol.append( '&nbsp;' );
                 break;
             case "install":
                 newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
 
 
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
-                filterTable = buildFilterTableString( newColumns, filterTable  );
-
                 sqlCol.append( sqlTable );
-                filterCol.append( filterTable );
-                filterToolbar.append( '&nbsp;' );
 
                 break;
             case "build":
                 newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
 
 
-                sqlTable = buildSqlTableString( newColumns, sqlTable )
-                filterTable = buildFilterTableString( newColumns, filterTable );
-
+                sqlTable = buildSqlTableString( newColumns, sqlTable );
                 sqlCol.append( sqlTable );
-                filterCol.append( filterTable );
-                filterToolbar.append( '&nbsp;' );
 
                 break;
             case "run":
                 newColumns = [ "Suite", "Test", "np", "Command" ];
 
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
-                filterTable = buildFilterTableString( newColumns, filterTable );
-
                 sqlCol.append( sqlTable );
-                filterCol.append( filterTable );
-                filterToolbar.append( '&nbsp;' );
 
                 break;
             default:
@@ -733,28 +700,33 @@ $(document).ready(function() {
         if( sqlbox.is(":visible") ){
             sqlbox.hide("slow");
         } else {
-            filterbox.hide( "slow" );
             settingsbox.hide( "slow" );
             sqlbox.show("slow");
         }
     });
-    $('#filter').on( 'click', function(){
-        if( filterbox.is(":visible") ){
-            filterbox.hide( "slow" );
-        } else {
-            settingsbox.hide( "slow" );
-            sqlbox.hide("slow");
-            filterbox.show( "slow" );
-        }
-    });
-    $('#settings').on( 'click', function(){
+
+    $('input[name=settings]').on( 'click', function(){
         if( settingsbox.is(":visible") ){
             settingsbox.hide( "slow" );
+            //sqlbox.show('slow');
         } else {
-            sqlbox.hide("slow");
-            filterbox.hide( "slow" );
+            //sqlbox.hide("slow");
             settingsbox.show( "slow" );
         }
+    });
+
+    $( document ).on( 'click', 'input[name=hidecaret]', function(){
+        sqlbox.hide("slow");
+        $(this)
+            .prop( 'src', 'img/downcaret.png')
+            .prop( 'name', 'showcaret' );
+    } );
+
+    $( document ).on( 'click', 'input[name=showcaret]', function(){
+        sqlbox.show("slow");
+        $(this)
+            .prop( 'src', 'img/caret.png')
+            .prop( 'name', 'hidecaret' );
     });
 
 
@@ -801,17 +773,15 @@ $(document).ready(function() {
     });
 
     //start over
-    $('button[value=startover]').on( 'click', function(){
+    $( document ).on( 'click', 'button[value=startover]', function(){
 
         //start.datepicker( 'setDate', '-1d' );
         //end.datepicker( 'setDate', now );
 
         $( 'select[name^=dates] option[value="past24hrs"]').attr("selected","selected");
 
-        $( 'input[name=sqltext]').val('');
+        $( 'input[type=text]').val('');
 
-        $( 'select[name^=display] option[value=show]').attr("selected","selected");
-        $( 'select[name^=display2] option[value=hide]').attr("selected","selected");
         //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
     });
 
@@ -939,7 +909,7 @@ $(document).ready(function() {
     } );
 
     //Filter buttons
-    $( 'button[value=clear]' ).on( 'click', function(){
+    $( document ).on( 'click', 'button[value=clear]', function(){
         $( 'input[type=text][class=column_filter]' ).val('').focus().blur();
     });
     $( 'button[value=toggler]' ).on( 'click', function(){
