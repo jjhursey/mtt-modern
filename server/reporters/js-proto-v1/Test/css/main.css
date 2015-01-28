@@ -166,7 +166,7 @@ table.dataTable tbody td.selected {
     cursor: pointer;
     display: block;
     height: 17px;
-    left: 166px;
+    left: 143px;
     position: relative;
     text-indent: -99999px;
     top: -26px;
@@ -205,6 +205,10 @@ table.dataTable tbody td.selected {
     background-color: lightcoral;
 }
 
+    .sqltextfields input {
+        width: 200px;
+    }
+
     .blankrow { height: 25px !important; }
     #showrow { text-align: center; }
 
@@ -225,8 +229,13 @@ table.dataTable tbody td.selected {
     #columnwrapper{  }
 
     .sqltoolbars{
-        width: 50%;
+        width: 25%;
         text-align: center;
+        float: left;
+    }
+
+    #sqltoolbar1{
+        width: 50%;
     }
 
 #filterbox{
