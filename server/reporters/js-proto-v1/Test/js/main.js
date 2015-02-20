@@ -5,14 +5,13 @@
 
 $(document).ready(function() {
 
+
     /*
      ****************************************************
      REST INTERFACE
      ****************************************************
      */
 
-
-    $('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
     var httpRequest;
 
     function makeRequest(url) {
@@ -49,13 +48,6 @@ $(document).ready(function() {
         }
     }
 
-
-     /*
-      ****************************************************
-      */
-
-
-
     /*
      ****************************************************
      Variable Declaration and Ajax Call
@@ -65,9 +57,64 @@ $(document).ready(function() {
      */
 
 
+    var allList = [
+        "http_username",
+        "local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "compiler"
+    ];
+
+    var installlist = [
+        "http_username",
+        "local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "endian",
+        "compiler"
+    ];
+
+    var buildrunlist = [
+        "http_username",
+        "local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "compiler",
+        "compiler_version",
+        "suite"
+    ];
+
+    var runlist = [
+        "http_username",
+        "local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "compiler",
+        "compiler_version",
+        "suite"
+    ]
+
+
     var colList =  [];
     var showColList = [];
     var hideColList = [];
+
+    var allphases;
 
     var stringCols = [
         //"http_username",
@@ -96,49 +143,52 @@ $(document).ready(function() {
     var table;
     var fields;
     var values;
-    var values2;
 
     var url = "ajax/data/pretty.json";
     //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
 
-    $.ajax({
-        dataType: "json",
-        url: url
-    })
-        .done( function( data ){
-            //fill variables
-            fields = data.fields;
-            values = data.values;
+    function ajaxprototype( ){
+        $.ajax({
+            dataType: "json",
+            url: url
+        })
+            .done( function( data ){
+                //fill variables
+                fields = data.fields;
+                values = data.values;
 
-            for( var i = 0; i < data.fields.length; i++ ){
-                setHeaders( data.fields[i] );
-                colList.push( data.fields[i] );
-                showColList.push( data.fields[i] );
-            }
-
-            for( var i = 0; i < colList.length; i++ ){
-                if( i < 6 ){
-                    stringCols.push( colList[i] );
-                } else {
-                    intCols.push( colList[i] );
+                for( var i = 0; i < data.fields.length; i++ ){
+                    //setHeaders( data.fields[i] );
+                    colList.push( data.fields[i] );
+                    showColList.push( data.fields[i] );
                 }
-            }
 
-            fillColList();
-            buildSelect();
-            addHeaders();
-            buildTable( values );
-        });
+                for( var i = 0; i < colList.length; i++ ){
+                    if( i < 6 ){
+                        stringCols.push( colList[i] );
+                    } else {
+                        intCols.push( colList[i] );
+                    }
+                }
 
+                fillColList( colList );
+                buildSelect();
+                addHeaders();
+                buildTable( values );
+            });
+    }
 
+    ajaxprototype( "all" );
+
+    function ajaxRequest(){}
 
 
     function addHeaders(){
-        console.log( fields );
-        console.log( values );
+        //console.log( fields );
+        //console.log( values );
 
         for(var i = 0; i < colList.length; i++){
-            console.log( colList[i] );
+            //console.log( colList[i] );
         }
     }
 
@@ -150,13 +200,6 @@ $(document).ready(function() {
       Search Initialization
      ****************************************************
      */
-    function filterGlobal () {
-        $('#example').DataTable().search(
-            $('#global_filter').val(),
-            true,
-            false
-        ).draw();
-    }
 
     function filterColumn ( i ) {
         $('#example').DataTable().column( i ).search(
@@ -168,13 +211,18 @@ $(document).ready(function() {
 
     /*
      ****************************************************
-     Window Selection and Phase Change
+     Phase Change
      ****************************************************
      */
 
     function phaseChange( phase ){
         removeTables();
         addTables( phase );
+
+        changeHeaders( phase );
+        pullValues( phase );
+
+        buildTable( values );
 
         //addTables
         //update show/hide
@@ -238,22 +286,220 @@ $(document).ready(function() {
         return table;
     }
 
-    function buildFilterTableString( newColumns, table ){
-        for( var i = 7; i < 11; i++ ){
-            var dc = "" + (i - 1);
-            var id1 = "filter_col" + i;
-            var id2 = "col" + i + "_filter";
+    function changeHeaders( phase ){
+
+        var header;
+        var tempTable = $( '#example' );
+        tempTable.empty();
+
+        switch( phase ){
+            case "all":
+                header =
+                    "<thead>" +
+                     "<tr id='headers' >" +
+                        "<th rowspan='2'>Org</th>" +
+                        "<th rowspan='2'>Local Username</th>" +
+                        "<th rowspan='2'>Platform name</th>" +
+                        "<th rowspan='2'>Hardware</th>" +
+                        "<th rowspan='2'>OS</th>" +
+                        "<th rowspan='2'>MPI name</th>" +
+                        "<th rowspan='2'>MPI version</th>" +
+                        "<th colspan='2'>MPI Install</th>" +
+                        "<th colspan='2'>Test Build</th>" +
+                        "<th colspan='5'>Test Run</th>" +
+                     "</tr>" +
+                    "<tr>" +
+                        //MPI Install
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                        //Test Build
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                        //Test Run
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                        "<th>Skip</th>" +
+                        "<th>Timed</th>" +
+                        "<th>Perf</th>" +
+                    "</tr>" +
+                    "</thead>";
+                break;
+
+            case "install":
+                header =
+                    "<thead>" +
+                    "<tr id='headers' >" +
+                        "<th rowspan='2'>Org</th>" +
+                        "<th rowspan='2'>Local Username</th>" +
+                        "<th rowspan='2'>Platform name</th>" +
+                        "<th rowspan='2'>Hardware</th>" +
+                        "<th rowspan='2'>OS</th>" +
+                        "<th rowspan='2'>MPI name</th>" +
+                        "<th rowspan='2'>MPI version</th>" +
+                        "<th rowspan='2'>Bitness</th>" +
+                        "<th rowspan='2'>Endian</th>" +
+                        "<th rowspan='2'>Compiler</th>" +
+                        "<th colspan='2'>MPI Install</th>" +
+                    "</tr>" +
+                    "<tr>" +
+                        //MPI Install
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                    "</tr>" +
+                    "</thead>";
 
 
-            table +=
-                "<tr id='" + id1 + "' data-column='" + dc + "'>" +
-                "<td> " + newColumns[ i-7 ] + " </td>" +
-                "<td align='center'><input type='text' class='column_filter' id='" + id2 + "'></td>" +
-                "</tr>";
+                break;
+
+            case "build":
+                header =
+                    "<thead>" +
+                    "<tr id='headers' >" +
+                        "<th rowspan='2'>Org</th>" +
+                        "<th rowspan='2'>Local Username</th>" +
+                        "<th rowspan='2'>Platform name</th>" +
+                        "<th rowspan='2'>Hardware</th>" +
+                        "<th rowspan='2'>OS</th>" +
+                        "<th rowspan='2'>MPI name</th>" +
+                        "<th rowspan='2'>MPI version</th>" +
+                        "<th rowspan='2'>Bitness</th>" +
+                        "<th rowspan='2'>Compiler</th>" +
+                        "<th rowspan='2'>Compiler Version</th>" +
+                        "<th rowspan='2'>Suite</th>" +
+                        "<th colspan='2'>Test Build</th>" +
+                    "</tr>" +
+                    "<tr>" +
+                        //Test Build
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                    "</tr>" +
+                    "</thead>";
+                break;
+
+            case "run":
+                header =
+                    "<thead>" +
+                    "<tr id='headers' >" +
+                        "<th rowspan='2'>Org</th>" +
+                        "<th rowspan='2'>Local Username</th>" +
+                        "<th rowspan='2'>Platform name</th>" +
+                        "<th rowspan='2'>Hardware</th>" +
+                        "<th rowspan='2'>OS</th>" +
+                        "<th rowspan='2'>MPI name</th>" +
+                        "<th rowspan='2'>MPI version</th>" +
+                        "<th rowspan='2'>Suite</th>" +
+                        "<th rowspan='2'>np</th>" +
+                        "<th colspan='5'>Test Run</th>" +
+                    "</tr>" +
+                    "<tr>" +
+                        //Test Run
+                        "<th>Pass</th>" +
+                        "<th>Fail</th>" +
+                        "<th>Skip</th>" +
+                        "<th>Timed</th>" +
+                        "<th>Perf</th>" +
+                    "</tr>" +
+                    "</thead>";
+
+                break;
+
+            default:
+                break;
+
         }
-        return table;
+
+
+        table.destroy();
+        tempTable.empty();
+        tempTable.append( header );
     }
 
+    function pullValues( phase, start, end ){
+
+        //var http = require('http');
+        var columnlist;
+        var searchlist = getSearchTerms();
+
+
+        switch( phase ){
+            case "all":
+                columnlist = allList;
+                break;
+            case "install":
+                columnlist = installlist;
+                break;
+            case "build":
+            case "run":
+                columnlist = buildrunlist;
+                break;
+            default:
+                break;
+        }
+
+        //function buildsearch(){
+
+            function checkSearchTerm(terms, name) {
+                var val = $('input[name=' + name + ']').val();
+                if (val) {
+                    terms[name] = val;
+                }
+            }
+
+            function getSearchTerms() {
+                var SEARCH_FIELDS = [ 'org', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
+                var terms = {};
+
+                for (var i = SEARCH_FIELDS.length; i--;) {
+                    checkSearchTerm(terms, SEARCH_FIELDS[i]);
+                }
+
+                terms.start_timestamp = start;
+                terms.end_timestamp = end;
+
+                return terms;
+            }
+
+        var jsonRequest =
+        {
+            "columns": columnlist,
+            "phases": phase,
+            "search": searchlist
+        };
+
+
+    // Setup the request.  The options parameter is
+    // the object we defined above.
+
+        function makeTheRequest ( json ){
+            $.ajax({
+                type: 'POST',
+                url: 'http://138.49.30.31:9090/summary',
+                dataType: 'json',
+                async: false,
+                data: json,
+                contentType: 'application/json',
+                success: function(data){
+                    alert( JSON.stringify( data ) );
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+
+            })
+        }
+
+        //makeTheRequest( JSON.stringify(jsonRequest) );
+        makeTheRequest( jsonRequest );
+
+
+
+        alert( JSON.stringify( jsonRequest ) );
+
+
+
+
+    }
     /*
      ****************************************************
      Table Configuration
@@ -262,59 +508,13 @@ $(document).ready(function() {
 
     function  buildTable( input ){
         table = $('#example').DataTable({
-            //"dom": 'C<"clear">Rlrtip',   l = amount per page
             "dom": '<"top">Rrtp<"bottom"li><"clear">',
-            data: input,
-            "columnDefs": [{
-                "visible": false,
-                "targets": -1
-            }],
-
-            "colVis": {
-                exclude: [],
-                restore: "Restore",
-                showAll: "Show All",
-                showNone: "Show None",
-                "buttonText": "Change columns",
-
-                groups: [
-                    {
-                        title: "MPI Install",
-                        columns: [6, 7]
-                    },
-                    {
-                        title: "Test Build",
-                        columns: [8, 9]
-                    },
-                    {
-                        title: "Test Run",
-                        columns: [10, 11, 12, 13]
-                    }
-                ],
-
-                "label": function (index, title, th) {
-                    var count = 0;
-
-                    if (title == "Pass") {
-                        count++;
-                    }
-
-                    if (title == "Pass" || title == "Fail") {
-                        return title + " - " + count;
-                    } else {
-                        return title;
-                    }
-                    //TODO: Make label dynamic
-                }
-            }
-
+            data: input
+            //"columnDefs": [{
+            //    "visible": false,
+            //    "targets": -1
+            //}]
         });
-    }
-
-    //TODO: dynamic table headers
-    function setHeaders( columnName ){
-        //var input = "<th rowspan=\"2\">" + columnName + "</th>";
-        //$( "#example" ).append( input );
     }
 
 
@@ -324,12 +524,9 @@ $(document).ready(function() {
      ****************************************************
      */
 
-
-
-    function fillColList(){
+    function fillColList( list ){
         for( var i = 0; i < colList.length; i++  ) {
-            var name = colList[i];
-            var input = "<option value\"" + name + "\">" + name + "</option>";
+            var name = list[i];var input = "<option value'" + name + "'>" + name + "</option>";
             $('#my-select').append( input );
         }
     }
@@ -410,7 +607,7 @@ $(document).ready(function() {
             }
 
             for (var k = 0; k < hideColList.length; k++) {
-                if ($(selected).html() === hideColList[k]) {
+                if ( $(selected).html() === hideColList[k] ) {
                     var column = table.column(i);
                     if (column.visible() === true) {
                         aggregate = true;
@@ -507,29 +704,12 @@ $(document).ready(function() {
 
     /*
      ****************************************************
-     Extra button functions
-     ****************************************************
-     */
-
-    function toggleCheckbox( selector ){
-        if( $( selector ).is(':checked') ){
-            $( selector ).prop('checked', false);
-        } else {
-            $( selector ).prop('checked', true);
-        }
-    }
-
-
-
-    /*
-     ****************************************************
      Date Range
      ****************************************************
      */
 
     var start = $( "#startdate" );
     var end = $( "#enddate" );
-
 
     //Uncommment when implementing final
     //start.datepicker().datepicker('setDate', "-1d" );
@@ -541,6 +721,7 @@ $(document).ready(function() {
     $(function() {
         start.datepicker({
             //defaultDate: "+1w",
+            defaultDate: "-1d",
             minDate: absoluteMin,
             maxDate: absoluteMax,
             changeMonth: true,
@@ -551,6 +732,7 @@ $(document).ready(function() {
         });
         end.datepicker({
             //defaultDate: "+1w",
+            defaultDate: new Date(),
             minDate: absoluteMin,
             maxDate: absoluteMax,
             changeMonth: true,
@@ -645,31 +827,25 @@ $(document).ready(function() {
     //------------------DRILL DOWNS------------------
 
     //CSS Row selection
-    var tableSelector = '#example tbody';
-    $( tableSelector ).on( 'click', 'tr', function () {
+    var tabletr = '#example tbody tr';
+    var tabletd = '#example tbody td';
+
+    $( document ).on( 'click', tabletr, function () {
         table.$('tr.selected').removeClass('selected');
         $(this).addClass('selected');
     } );
-    $( tableSelector ).on( 'dblclick', 'tr', function () {
+    $( document ).on( 'dblclick', tabletr, function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
         }
     });
 
     //Drill Down - grab td cell data
-    var filterbox = $('#filterbox');
     var sqlbox = $('#sqlbox');
-    var settingsbox = $('#settingsbox');
 
-    $( tableSelector ).on( 'click', 'td', function () {
+    $( document ).on( 'click', tabletd, function () {
         table.$('td.selected').removeClass('selected');
         $(this).addClass('selected');
-
-        //if( !filterbox.is(":visible") ){
-        //    settingsbox.hide( "slow" );
-        //    sqlbox.hide("slow");
-        //    filterbox.show( "slow" );
-        //}
 
         var field = $('.column_filter').eq( $(this).index() );
 
@@ -681,7 +857,7 @@ $(document).ready(function() {
             field.focus();
         }
     } );
-    $( tableSelector ).on( 'dblclick', 'td', function () {
+    $( document ).on( 'dblclick', tabletd, function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
         }
@@ -730,7 +906,8 @@ $(document).ready(function() {
     });
 
 
-    //------------------SQL WINDOW------------------
+
+    //------------------SQL MODE------------------
 
     //dates dropdown
     $( 'select[name=dates]' ).on( 'change', function(){
@@ -754,39 +931,34 @@ $(document).ready(function() {
     $( 'button[value=summary]' ).on( 'click', function(){
         var requestformat =  'YYYY-MM-DD hh:mm:ss a';
 
-        var startdate = getDate( $('select[name=dates] option:selected').attr('value') );
+        var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
         var enddate = $( '#enddate' ).val();
 
         var startMoment = startdate.format( requestformat );
         var endMoment = moment( new Date(enddate) ).endOf('day').format( requestformat );
 
-        console.log("Date Range: " + startMoment + " to " + endMoment );
+        pullValues( "all", startMoment, endMoment );
 
-        //console.log( "Org: " + $( 'input[id=org]' ).val() );
-        //console.log( "Local Username: " + $( 'input[id=localusername]' ).val() );
-        //console.log( "Platform Name: " + $( 'input[id=platform_name]' ).val() );
-        //console.log( "Hardware: " + $( 'input[id=platform_hardware]' ).val() );
-        //console.log( "OS: " + $( 'input[id=os_name]' ).val() );
-        //console.log( "MPI Name: " + $( 'input[id=mpi_name]' ).val() );
-        //console.log( "MPI Version: " + $( 'input[id=mpi_version]' ).val() );
-        //console.log( moment.parsingFlags().invalidMonth );
+        console.log( "Date Range: " + startMoment + " to " + endMoment );
+
+
+
     });
 
     //start over
     $( document ).on( 'click', 'button[value=startover]', function(){
 
-        //start.datepicker( 'setDate', '-1d' );
-        //end.datepicker( 'setDate', now );
+        $( 'input[type=text]').val('');
 
         $( 'select[name^=dates] option[value="past24hrs"]').attr("selected","selected");
 
-        $( 'input[type=text]').val('');
+        start.datepicker( 'setDate', '-1d' );
+        end.datepicker( 'setDate', new Date() );
 
         //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
     });
 
     //filter
-
     var state = true;
 
     $('button[value=filter]').on( 'click', function(){
@@ -869,9 +1041,10 @@ $(document).ready(function() {
                         .parents('tr')
                         .attr( 'data-column', i );
                 }
-
-
-
+            } else {
+                $('.sqltextfields')
+                    .find('input')
+                    .removeClass('column_filter');
             }
 
         }
@@ -887,75 +1060,29 @@ $(document).ready(function() {
         state = ( color === lightcoral );
     });
 
+    //performance
+    //$('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
+    $('button[value=perf]').on( 'click', function() { pullValues( "all" ) });
 
 
-    //------------------FILTER WINDOW------------------
+
+    //------------------FILTER MODE------------------
 
     //filter fields
-    $('input.global_filter').on( 'keyup click', function() {
-        filterGlobal();
-    } );
     $( document ).on( 'keyup click focus', 'input.column_filter', function() {
-
         if( !state ) {
             filterColumn( $(this).parents('tr').attr('data-column') );
         }
     } );
 
-    //Column show/hide toggle
-    $('#show-hide').click( function(){
-        toggleCols();
-        console.log(" ");
-    } );
-
-    //Filter buttons
+    //clear
     $( document ).on( 'click', 'button[value=clear]', function(){
         $( 'input[type=text][class=column_filter]' ).val('').focus().blur();
     });
-    $( 'button[value=toggler]' ).on( 'click', function(){
-        toggleCheckbox( 'input[type=checkbox][class=column_filter][id*=regex]' );
-    });
-    $( 'button[value=toggles]' ).on( 'click', function(){
-        toggleCheckbox( 'input[type=checkbox][class=column_filter][id*=smart]' );
-    });
-    $( 'button[value=resetf]' ).on( 'click', function(){
-        $( 'input[type=text][class=column_filter]' ).val('').focus().blur();
-        $( 'input[type=checkbox][class=column_filter][id*=regex]').prop("checked", false);
-        $( 'input[type=checkbox][class=column_filter][id*=smart]').prop("checked", true);
-    });
 
-
-    //Preference buttons
-
-
-    /*
-     ****************************************************
-     Performance
-     ****************************************************
-     */
-
-    SpeedTest.prototype = {
-        startTest: function(){
-            var beginTime, endTime;
-            beginTime = +new Date();
-
-            this.testImplement( this.testParams );
-            endTime = +new Date();
-
-            timeSpent = endTime - beginTime;
-
-            return console.log( timeSpent + "(" + this.testedFunction + ")"  );
-        }
-    }
-
-    function SpeedTest( testImplement, testParams, testedFunction ) {
-        this.testImplement = testImplement;
-        this.testParams = testParams;
-        this.testedFunction = testedFunction;
-    }
-
-    //var aggregateTest = new SpeedTest(  )
-
-
+    //show/hide
+    $('#show-hide').click( function(){
+        toggleCols();
+    } );
 
 });
