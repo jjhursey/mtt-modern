@@ -30,25 +30,7 @@ def get_fields():
 ################################################################
 #
 ################################################################
-def get_summary():
-    global base_url
-    
-    s = requests.Session()
-
-    payload = {'phases': 'install'}
-    url = base_url + "/summary"
-    print "URL: " + url
-    
-    r = s.get(url, params=payload)
-
-    print "Get Summary: %d: %s" % (r.status_code, r.headers['content-type'])
-    print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
-
-
-################################################################
-#
-################################################################
-def post_summary():
+def post_detail():
     global base_url
     
     s = requests.Session()
@@ -68,18 +50,18 @@ def post_summary():
     payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
 
     
-    url = base_url + "/summary"
+    url = base_url + "/detail"
     print "URL: " + url
     
     r = s.post(url, data=json.dumps(payload), headers=headers)
 
-    print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
+    print "Post Detail: %d: %s" % (r.status_code, r.headers['content-type'])
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
 
 ################################################################
 #
 ################################################################
-def post_complex_summary(phase="install"):
+def post_complex_detail(phase="install"):
     global base_url
     
     s = requests.Session()
@@ -149,12 +131,12 @@ def post_complex_summary(phase="install"):
     payload['search']['mpi_name'] = 'ompi-v1.8'
 
 
-    url = base_url + "/summary"
+    url = base_url + "/detail"
     print "URL: " + url
     
     r = s.post(url, data=json.dumps(payload), headers=headers)
 
-    print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
+    print "Post Detail: %d: %s" % (r.status_code, r.headers['content-type'])
     result = r.json()
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
     
@@ -166,12 +148,11 @@ def post_complex_summary(phase="install"):
 # Main Program
 ################################################################
 #get_fields()
-#get_summary()
-post_summary()
-#post_complex_summary("install")
-#post_complex_summary("test_build")
-#post_complex_summary("test_run")
-#post_complex_summary("all")
+post_detail()
+#post_complex_detail("install")
+#post_complex_detail("test_build")
+#post_complex_detail("test_run")
+#post_complex_detail("all")
 
 print "-" * 70
 

@@ -30,7 +30,6 @@ def fields(db_settings, session=[]):
             "suite_name"          : "Test Suite",
             "test_name"           : "Test",
             "compute_cluster"     : "Cluster",
-            "compiler"            : "Compiler",
             "trial"               : "Trial",
             "all_phases"          : "All phases",
             "mpi_get"             : "MPI get",
@@ -129,7 +128,7 @@ def fields(db_settings, session=[]):
     return rtn
 
 
-def validate_search_parameters(db_settings, session=[], data=[]):
+def validate_search_parameters(db_settings, session=[], data=[], is_summary=True):
     rtn = { "fields" : None, "values" : None }
 
     #
@@ -149,7 +148,7 @@ def validate_search_parameters(db_settings, session=[], data=[]):
         rtn['status_msg'] = "Validate Error: No 'phases' parameter specified."
         return rtn
 
-    val, phase = preprocess_phase(data['phases'])
+    val, phase = preprocess_phase(data['phases'], is_summary)
     if phase == None or val != 0:
         rtn['status'] = -4
         rtn['status_msg'] = "Validate Error: Invalid 'phases' parameter: '%s'." % (phase)
@@ -359,7 +358,7 @@ def get_sql_table_structure():
     return rtn;
 
 
-def preprocess_phase(phases):
+def preprocess_phase(phases, is_summary=True):
     true_phase = None
     
     for phase in phases:
@@ -369,7 +368,7 @@ def preprocess_phase(phases):
             true_phase = "test_build"
         elif 'test_run' == phase:
             true_phase = "test_run"
-        elif 'all' == phase:
+        elif 'all' == phase and is_summary == True:
             true_phase = "all"
         else:
             true_phase = phase
