@@ -82,6 +82,7 @@ def index(db_settings, session=[], data=[]):
     #
     # Build the response
     #
+    print "Returning: " + str(len(rows)) + " values (rows)"
     #print "-*" * 40
     #pp = pprint.PrettyPrinter(indent=4)
     #pp.pprint(rows)
@@ -188,6 +189,20 @@ def which_table_contains(field):
 
     return tables
 
+def get_keys_test_result():
+    return [ "mpi_install_pass",
+              "mpi_install_fail",
+              "test_build_pass",
+              "test_build_fail",
+              "test_run_pass",
+              "test_run_fail",
+              "test_run_skip",
+              "test_run_timed"]
+#              "test_run_perf"]
+
+def is_special_key(field):
+    return field in get_keys_test_result()
+
 def preprocess_field(field):
     if field == "start_timestamp":
         return "start_timestamp"
@@ -235,6 +250,7 @@ def build_sql(session=[], data=[]):
     fields = []
     tables = []
     tablesd = {}
+    keys = {}
     
     where = "\n\t" + "mpi_install.mpi_install_id > 0 "
     
@@ -288,7 +304,10 @@ def build_sql(session=[], data=[]):
         
         tables = which_table_contains(col)
         if 0 == len(tables):
-            print "Error: Cound not find the field (%s). Skipping!" % (col)
+            if is_special_key(col) == True:
+                keys[col] = data['search'][col]
+            else:
+                print "Error: Cound not find the field (%s). Skipping!" % (col)
         elif 1 == len(tables):
             print "\t%20s\tTable: %s" %(col, tables[0])
             if col not in tablesd:
@@ -312,6 +331,8 @@ def build_sql(session=[], data=[]):
     print "-"*40
     for k,v in tablesd.iteritems():
         print "REQUIRE: %20s in %s" % (k,v)
+    for k,v in keys.iteritems():
+        print "KEY: %20s matching '%s'" % (k,v)
     print "-"*40
 
     
@@ -365,6 +386,42 @@ def build_sql(session=[], data=[]):
             qualify = "mpi_install."
         where += "\n\t AND "+qualify+"compiler_name = '"+data['search']['compiler_name']+"'"
         
+    #
+    # Special Key: pass/fail/skip/timed/perf
+    #
+    outer_where = ""
+    keys_test_result = get_keys_test_result()
+    for k in keys:
+        if k in keys_test_result:
+            outer_where += "\n\t"
+            if outer_where != "\n\t":
+                outer_where += " AND"
+
+            if "mpi_install_pass" == k or "mpi_install_fail" == k:
+                outer_where += " mpi_install.test_result "
+            elif "test_build_pass" == k or "test_build_fail" == k:
+                outer_where += " test_build.test_result "
+            elif "test_run_pass" == k or "test_run_fail" == k:
+                outer_where += " test_run.test_result "
+            elif "test_run_skip" == k or "test_run_timed" == k or "test_run_perf" == k:
+                outer_where += " test_run.test_result "
+
+            if keys[k] <= 0:
+                outer_where += "!"
+
+            if re.search(r'_pass', k):
+                outer_where += "= 1"
+            elif re.search(r'fail', k):
+                outer_where += "= 0"
+            elif re.search(r'_skip', k):
+                outer_where += "= 2"
+            elif re.search(r'_timed', k):
+                outer_where += "= 3"
+            elif re.search(r'_perf', k):
+                outer_where += "= 4"
+            else:
+                outer_where += "= 999"
+
 
     #################################################################
     # Phases
@@ -447,7 +504,10 @@ def build_sql(session=[], data=[]):
         where += "\n\t" + "AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
     sql += "\n"
-    sql += " WHERE " + where
+    sql += " WHERE "
+    sql +=  where
+    if outer_where != "":
+        sql += "\n\t AND "+ outer_where
 
     #
     # Return SQL
