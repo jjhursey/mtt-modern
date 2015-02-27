@@ -27,7 +27,7 @@ def fields(db_settings, session=[]):
             "exit_signal"         : "Signal",
             "duration"            : "Duration",
             "np"                  : "np",
-            "suite_name"          : "Test Suite",
+            "test_suite_name"     : "Test Suite",
             "test_name"           : "Test",
             "compute_cluster"     : "Cluster",
             "trial"               : "Trial",
@@ -268,7 +268,7 @@ def index(db_settings, session=[], data=[]):
     sql, fields = build_sql(session, data)
     if None == sql:
         return { "fields" : fields, "values" : None }
-    print "SQL: " + sql
+    print "SQL: \n" + sql
     cur.execute(sql +";")
     rows = cur.fetchall()
 
@@ -401,17 +401,44 @@ def need_table(table_name, all_cols):
             return True
     return False
 
+def sql_create_outer_select_field(field, qualify=""):
+    if field == "bitness":
+        return """(CASE
+          WHEN (bitness = B'000000')  THEN 'unknown'
+          WHEN (bitness = B'000001')  THEN '8'
+          WHEN (bitness = B'000010')  THEN '16'
+          WHEN (bitness = B'000100')  THEN '32'
+          WHEN (bitness = B'001000')  THEN '64'
+          WHEN (bitness = B'001100')  THEN '32/64'
+          WHEN (bitness = B'010000')  THEN '128'
+          ELSE 'unknown' END) as bitness
+        """
+    elif field == "endian":
+        return """(CASE
+          WHEN (endian = B'01')       THEN 'little'
+          WHEN (endian = B'10')       THEN 'big'
+          ELSE 'unknown' END) as endian
+        """
+    elif field == "vpath_mode":
+        return """(CASE
+          WHEN (vpath_mode = B'01')       THEN 'relative'
+          WHEN (vpath_mode = B'10')       THEN 'absolute'
+          ELSE 'unknown' END) as vpath_mode
+        """
+    elif field == "duration":
+        return "to_char("+qualify+"duration, 'HH24:MI:SS') as duration"
+    else:
+        return field
+
 def build_sql(session=[], data=[]):
     fields = []
     tables = []
     tablesd = {}
     
-    where = """
-           WHERE
-              mpi_install.mpi_install_id > 0 """
+    where = "mpi_install.mpi_install_id > 0 "
     
     sql = None
-
+     
     #################################################################
     # Columns required
     #################################################################
@@ -541,35 +568,54 @@ def build_sql(session=[], data=[]):
     #################################################################
     # Phases
     #################################################################
-    select_base_fields = ",\n\t".join(fields)
+    group_by_fields = ""
+    order_by_fields = ""
+    select_inner_fields = ""
+    
+    #
+    # Outer Select: Primary fields
+    #
+    countF = 0
+    select_base_fields = ""
+    qf = ""
+    tbl_str = get_sql_table_structure()
+    for f in fields:
+        if f in tbl_str["results_fields"]:
+            if qualify == "":
+                qf = "mpi_install."
+            else:
+                qf = qualify
+        else:
+            qf = ""
+
+        if countF == 0:
+            select_base_fields  += "\n\t" + sql_create_outer_select_field(f, qf)
+            group_by_fields     += "\n\t" + f
+            order_by_fields     += "\n\t" + f
+            select_inner_fields += "\n\t" + qf + f
+        else:
+            select_base_fields  += ",\n\t" + sql_create_outer_select_field(f, qf)
+            group_by_fields     += ",\n\t" + f
+            order_by_fields     += ",\n\t" + f
+            select_inner_fields += ",\n\t" + qf + f
+
+        countF += 1
+        
     select_base_out_fields = select_base_fields
     select_base_out_fields = re.sub(r'mpi_install.', 'results.', select_base_out_fields)
     select_base_out_fields = re.sub(r'test_build.', 'results.', select_base_out_fields)
-    
+    select_base_out_fields = re.sub(r'test_run.', 'results.', select_base_out_fields)
+    group_by_fields = re.sub(r'mpi_install.', 'results.', group_by_fields)
+    group_by_fields = re.sub(r'test_build.', 'results.', group_by_fields)
+    order_by_fields = re.sub(r'mpi_install.', 'results.', order_by_fields)
+    order_by_fields = re.sub(r'test_build.', 'results.', order_by_fields)
+
+
+    #
+    # Outer Select: aggregation fields
+    #
     select_agg_out_fields = ""
 
-    select_agg_sub_m_fields = ""
-    select_agg_sub_b_fields = ""
-    select_agg_sub_r_fields = ""
-
-    select_agg_dummy_m_fields  = ""
-    select_agg_dummy_m_fields += ",\n\t(0) as _mpi_p"
-    select_agg_dummy_m_fields += ",\n\t(0) as _mpi_f"
-
-    select_agg_dummy_b_fields  = ""
-    select_agg_dummy_b_fields += ",\n\t(0) as _build_p"
-    select_agg_dummy_b_fields += ",\n\t(0) as _build_f"
-
-    select_agg_dummy_r_fields  = ""
-    select_agg_dummy_r_fields += ",\n\t(0) as _run_p"
-    select_agg_dummy_r_fields += ",\n\t(0) as _run_f"
-    select_agg_dummy_r_fields += ",\n\t(0) as _run_s"
-    select_agg_dummy_r_fields += ",\n\t(0) as _run_t"
-    
-    select_from_m = "\n"
-    select_from_b = "\n"
-    select_from_r = "\n"
-    
     if 'install' in data['phases'] or 'all' in data['phases']:
         fields.append("mpi_install_pass")
         fields.append("mpi_install_fail")
@@ -577,10 +623,6 @@ def build_sql(session=[], data=[]):
         select_agg_out_fields += ",\n\tSUM(_mpi_p) as mpi_install_pass"
         select_agg_out_fields += ",\n\tSUM(_mpi_f) as mpi_install_fail"
 
-        select_agg_sub_m_fields += ",\n\t(CASE WHEN mpi_install.test_result = 1 THEN 1 ELSE 0 END) as _mpi_p"
-        select_agg_sub_m_fields += ",\n\t(CASE WHEN mpi_install.test_result = 0 THEN 1 ELSE 0 END) as _mpi_f"
-
-        select_from_m += "\n\t mpi_install"
     if 'test_build' in data['phases'] or 'all' in data['phases']:
         fields.append("test_build_pass")
         fields.append("test_build_fail")
@@ -588,10 +630,6 @@ def build_sql(session=[], data=[]):
         select_agg_out_fields += ",\n\tSUM(_build_p) as test_build_pass"
         select_agg_out_fields += ",\n\tSUM(_build_f) as test_build_fail"
 
-        select_agg_sub_b_fields += ",\n\t(CASE WHEN test_build.test_result = 1 THEN 1 ELSE 0 END) as _build_p"
-        select_agg_sub_b_fields += ",\n\t(CASE WHEN test_build.test_result = 0 THEN 1 ELSE 0 END) as _build_f"
-
-        select_from_b += "\n\t test_build"
     if 'test_run' in data['phases'] or 'all' in data['phases']:
         fields.append("test_run_pass")
         fields.append("test_run_fail")
@@ -603,19 +641,50 @@ def build_sql(session=[], data=[]):
         select_agg_out_fields += ",\n\tSUM(_run_s) as test_run_skip"
         select_agg_out_fields += ",\n\tSUM(_run_t) as test_run_timed"
 
-        select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 1 THEN 1 ELSE 0 END) as _run_p"
-        select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 0 THEN 1 ELSE 0 END) as _run_f"
-        select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 2 THEN 1 ELSE 0 END) as _run_s"
-        select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 3 THEN 1 ELSE 0 END) as _run_t"
+    #
+    # Outer Select: Build it
+    #
+    sql  = "SELECT "
+    sql += select_base_out_fields
+    sql += select_agg_out_fields
 
-        select_from_r += "\n\t test_run"
         
-    print "SF: " + select_base_fields
-
 
     #
-    # Build Basic SQL
+    # Inner Select: define aggregation fields and dummy versions
     #
+    select_agg_sub_m_fields    = ""
+    select_agg_sub_m_fields   += ",\n\t(CASE WHEN mpi_install.test_result = 1 THEN 1 ELSE 0 END) as _mpi_p"
+    select_agg_sub_m_fields   += ",\n\t(CASE WHEN mpi_install.test_result = 0 THEN 1 ELSE 0 END) as _mpi_f"
+    select_agg_dummy_m_fields  = ""
+    select_agg_dummy_m_fields += ",\n\t(0) as _mpi_p"
+    select_agg_dummy_m_fields += ",\n\t(0) as _mpi_f"
+
+    select_agg_sub_b_fields    = ""
+    select_agg_sub_b_fields   += ",\n\t(CASE WHEN test_build.test_result = 1 THEN 1 ELSE 0 END) as _build_p"
+    select_agg_sub_b_fields   += ",\n\t(CASE WHEN test_build.test_result = 0 THEN 1 ELSE 0 END) as _build_f"
+    select_agg_dummy_b_fields  = ""
+    select_agg_dummy_b_fields += ",\n\t(0) as _build_p"
+    select_agg_dummy_b_fields += ",\n\t(0) as _build_f"
+
+    select_agg_sub_r_fields = ""
+    select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 1 THEN 1 ELSE 0 END) as _run_p"
+    select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 0 THEN 1 ELSE 0 END) as _run_f"
+    select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 2 THEN 1 ELSE 0 END) as _run_s"
+    select_agg_sub_r_fields += ",\n\t(CASE WHEN test_run.test_result = 3 THEN 1 ELSE 0 END) as _run_t"
+    select_agg_dummy_r_fields  = ""
+    select_agg_dummy_r_fields += ",\n\t(0) as _run_p"
+    select_agg_dummy_r_fields += ",\n\t(0) as _run_f"
+    select_agg_dummy_r_fields += ",\n\t(0) as _run_s"
+    select_agg_dummy_r_fields += ",\n\t(0) as _run_t"
+
+        
+    #
+    # From tables
+    #
+    select_from_m = "\n\t mpi_install"
+    select_from_b = "\n\t test_build"
+    select_from_r = "\n\t test_run"
     if need_table("submit", tablesd) == True:
         select_from_m += "\n\t\t JOIN submit using (submit_id)"
         select_from_b += "\n\t\t JOIN submit using (submit_id)"
@@ -624,61 +693,77 @@ def build_sql(session=[], data=[]):
         select_from_b += "\n\t\t JOIN mpi_install using (mpi_install_id)"
         select_from_r += "\n\t\t JOIN mpi_install using (mpi_install_id)"
         
-    sql  = "SELECT \n\t" + select_base_out_fields
-    sql += select_agg_out_fields
-    sql += "\n\tFROM ("
+    #
+    # Build Basic SQL
+    #
+        
+    sql += "\nFROM ("
 
     #
     # All phases - Union the three tables of data
     #
     if 'all' in data['phases'] or len(data['phases']) == 3:
         sql += "\n("
-        
-        sql += "\n\t\tSELECT \n\t" + select_base_fields
+
+        #
+        # MPI Install
+        #
+        sql += "\n\t\tSELECT \n\t"
+        sql += select_inner_fields
         sql += select_agg_sub_m_fields
         sql += select_agg_dummy_b_fields
         sql += select_agg_dummy_r_fields
         sql += "\n\tFROM " + select_from_m
-        sql += where
+        sql += "\n\tWHERE " + where
         qualify = "mpi_install."
         if "start_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp >= '"+data['search']['start_timestamp']+"'"
         if "end_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
         
-
+        ###############
         sql += "\n) UNION ALL ("
-
+        ###############
         
-        sql += "\n\t\tSELECT \n\t" + select_base_fields
+        #
+        # Test Build
+        #
+        sql += "\n\t\tSELECT \n\t"
+        sql += select_inner_fields
         sql += select_agg_dummy_m_fields
         sql += select_agg_sub_b_fields
         sql += select_agg_dummy_r_fields
         sql += "\n\tFROM " + select_from_b
-        sql += where
+        sql += "\n\tWHERE " + where
         qualify = "test_build."
         if "start_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp >= '"+data['search']['start_timestamp']+"'"
         if "end_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
-            
+        ###############
         sql += "\n) UNION ALL ("
-
+        ###############
         
-        sql += "\n\t\tSELECT \n\t" + select_base_fields
+        #
+        # Test Run
+        #
+        sql += "\n\t\tSELECT \n\t"
+        sql += select_inner_fields
         sql += select_agg_dummy_m_fields
         sql += select_agg_dummy_b_fields
         sql += select_agg_sub_r_fields
         sql += "\n\tFROM " + select_from_r
-        sql += where
+        sql += "\n\tWHERE " + where
         qualify = "test_run."
         if "start_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp >= '"+data['search']['start_timestamp']+"'"
         if "end_timestamp" in data['search']:
             sql += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
+        ###############
         sql += "\n)"
+        ###############
     #
     # MPI Install
     #
@@ -690,9 +775,12 @@ def build_sql(session=[], data=[]):
         if "end_timestamp" in data['search']:
             where += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
-        sql += "\n\t\tSELECT \n\t" + select_base_fields + select_agg_sub_m_fields
+        sql += "\n\tSELECT "
+        sql += select_inner_fields
+        sql += select_agg_sub_m_fields
+
         sql += "\n\tFROM " + select_from_m
-        sql += where
+        sql += "\n\tWHERE " + where
     #
     # Test Build
     #
@@ -704,9 +792,12 @@ def build_sql(session=[], data=[]):
         if "end_timestamp" in data['search']:
             where += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
-        sql += "\n\t\tSELECT \n\t" + select_base_fields + select_agg_sub_b_fields
+        sql += "\n\tSELECT "
+        sql += select_inner_fields
+        sql += select_agg_sub_b_fields
+
         sql += "\n\tFROM " + select_from_b
-        sql += where
+        sql += "\n\tWHERE " + where
     #
     # Test Run
     #
@@ -718,9 +809,12 @@ def build_sql(session=[], data=[]):
         if "end_timestamp" in data['search']:
             where += "\n\t AND "+qualify+"start_timestamp <= '"+data['search']['end_timestamp']+"'"
 
-        sql += "\n\t\tSELECT \n\t" + select_base_fields + select_agg_sub_r_fields
+        sql += "\n\tSELECT "
+        sql += select_inner_fields
+        sql += select_agg_sub_r_fields
+
         sql += "\n\tFROM " + select_from_r
-        sql += where
+        sql += "\n\tWHERE " + where
     #
     # MPI Install, Test Build
     #
@@ -741,11 +835,22 @@ def build_sql(session=[], data=[]):
     #
     # Return SQL
     #
-    sql += ") as results"
+    sql += "\n     ) as results"
 
     
-    sql += "\n\tGROUP BY \n\t" + select_base_out_fields
-    sql += "\n\tORDER BY \n\t" + select_base_out_fields
-    sql += "\n\tOFFSET 0"
+    sql += "\nGROUP BY " + group_by_fields
+    sql += "\nORDER BY " + order_by_fields
+    sql += "\nOFFSET 0"
 
-    return sql, fields
+    final_fields = []
+    for f in fields:
+        if re.match(r'mpi_install.', f):
+            final_fields.append(re.sub(r'mpi_install.', '', f))
+        elif re.match(r'test_build.', f):
+            final_fields.append(re.sub(r'test_build.', '', f))
+        elif re.match(r'test_run.', f):
+            final_fields.append(re.sub(r'test_run.', '', f))
+        else:
+            final_fields.append(f)
+
+    return sql, final_fields

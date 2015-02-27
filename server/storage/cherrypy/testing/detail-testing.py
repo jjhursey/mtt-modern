@@ -14,22 +14,6 @@ base_url = "http://" + server_addr + ":" + str(server_port)
 ################################################################
 #
 ################################################################
-def get_fields():
-    global base_url
-    
-    s = requests.Session()
-
-    url = base_url + "/fields"
-    print "URL: " + url
-    r = s.get(url)
-
-    print "Get Fields: %d: %s" % (r.status_code, r.headers['content-type'])
-    print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
-
-
-################################################################
-#
-################################################################
 def post_detail():
     global base_url
     
@@ -41,10 +25,18 @@ def post_detail():
 
     payload['phases'] = []
     payload['phases'].append( 'install' )
+    #payload['phases'].append( 'test_build' )
+    #payload['phases'].append( 'test_run' )
+    #payload['phases'].append( 'all' )
 
     payload['columns'] = []
+    #payload['columns'].append( 'mpi_install_id' )
     payload['columns'].append( 'mpi_name' )
-
+    payload['columns'].append( 'endian' )
+    payload['columns'].append( 'bitness' )
+    payload['columns'].append( 'vpath_mode' )
+    payload['columns'].append( 'duration' )
+    
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
     payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
@@ -56,7 +48,12 @@ def post_detail():
     r = s.post(url, data=json.dumps(payload), headers=headers)
 
     print "Post Detail: %d: %s" % (r.status_code, r.headers['content-type'])
+    result = r.json()
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+
+    if result["values"] != None:
+        print "Length: " + str( len(result["values"]) )
+
 
 ################################################################
 #

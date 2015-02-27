@@ -202,29 +202,45 @@ def need_table(table_name, all_cols):
             return True
     return False
 
+def sql_create_outer_select_field(field, qualify=""):
+    if field == "bitness":
+        return """(CASE
+          WHEN (bitness = B'000000')  THEN 'unknown'
+          WHEN (bitness = B'000001')  THEN '8'
+          WHEN (bitness = B'000010')  THEN '16'
+          WHEN (bitness = B'000100')  THEN '32'
+          WHEN (bitness = B'001000')  THEN '64'
+          WHEN (bitness = B'001100')  THEN '32/64'
+          WHEN (bitness = B'010000')  THEN '128'
+          ELSE 'unknown' END) as bitness
+        """
+    elif field == "endian":
+        return """(CASE
+          WHEN (endian = B'01')       THEN 'little'
+          WHEN (endian = B'10')       THEN 'big'
+          ELSE 'unknown' END) as endian
+        """
+    elif field == "vpath_mode":
+        return """(CASE
+          WHEN (vpath_mode = B'01')       THEN 'relative'
+          WHEN (vpath_mode = B'10')       THEN 'absolute'
+          ELSE 'unknown' END) as vpath_mode
+        """
+    elif field == "duration":
+        return "to_char("+qualify+"duration, 'HH24:MI:SS') as duration"
+    else:
+        return field
+
 def build_sql(session=[], data=[]):
     fields = []
     tables = []
     tablesd = {}
-    with_duration = False
     
     where = "\n\t" + "mpi_install.mpi_install_id > 0 "
     
     sql = None
 
-    #data['columns'].append("test_result")
-    #data['columns'].append("http_username")
-    #data['columns'].append("mpi_install_id")
-    #data['columns'].append("duration")
-    #data['columns'].append("result_message")
-    #data['columns'].append("result_stdout")
-    #data['columns'].append("result_stderr")
 
-    if "duration" in data['columns']:
-        data['columns'].remove("duration")
-        with_duration = True
-
-        
     #################################################################
     # Columns required
     #################################################################
@@ -353,19 +369,12 @@ def build_sql(session=[], data=[]):
     #################################################################
     # Phases
     #################################################################
+    group_by_fields = ""
+    order_by_fields = ""
     select_from_table = ""
-    select_from_other_table = ""
 
     #
-    # Required 
-    #
-    #fields.append("test_result")
-    #fields.append("result_message")
-    #fields.append("result_stdout")
-    #fields.append("result_stderr")
-
-    #
-    #
+    # determine qualifier
     #
     if 'install' in data['phases']:
         select_from_table = "mpi_install"
@@ -377,45 +386,60 @@ def build_sql(session=[], data=[]):
         return None
 
     qualify = select_from_table + "."
+
     select_from_table = "\n\t" + select_from_table
 
     #
     # Add qualifier to all common "results_fields"
     #
+    countF = 0
+    qf = ""
+    select_base_fields = ""
     tbl_str = get_sql_table_structure()
-    for tblf in tbl_str["results_fields"]:
-        bv = False
-        for fld in fields:
-            if tblf == fld:
-                bv = True
-        if bv == True:
-            fields.remove(tblf)
-            fields.append(qualify + tblf)
+    for f in fields:
+        if f in tbl_str["results_fields"]:
+            qf = qualify
+        else:
+            qf = ""
+        print "DEBUG ("+qf+") : ["+f+"]"
+        if countF == 0:
+            select_base_fields  += "\n\t" + sql_create_outer_select_field(f, qf)
+            group_by_fields     += "\n\t" + f
+            order_by_fields     += "\n\t" + f
+        else:
+            select_base_fields  += ",\n\t" + sql_create_outer_select_field(f, qf)
+            group_by_fields     += ",\n\t" + f
+            order_by_fields     += ",\n\t" + f
 
-    select_base_fields  = ",\n\t".join(fields)
+        countF += 1
     
     select_base_out_fields = select_base_fields
-    select_base_out_fields = re.sub(r'mpi_install.', 'results.', select_base_out_fields)
-    select_base_out_fields = re.sub(r'test_build.', 'results.', select_base_out_fields)
-    
         
-    print "SF: " + select_base_fields
-
-
     #
-    # Build Basic SQL
+    # Outer Select: Build it
     #
+    sql  = "SELECT "
+    sql += select_base_out_fields
+
+    
+    #
+    # From
+    #
+    select_from_other_table = ""
     if need_table("submit", tablesd) == True:
         select_from_other_table += "\n\t JOIN submit using (submit_id)"
+        
     if need_table("mpi_install", tablesd) == True and not 'install' in data['phases']:
         select_from_other_table += "\n\t JOIN mpi_install using (mpi_install_id)"
         
-    sql  = "SELECT \n\t" + select_base_fields
-    if with_duration == True:
-        sql += ",\n\tto_char("+qualify+"duration, 'HH24:MI:SS') as duration"
     sql += "\n"
-    sql += " FROM " + select_from_table + select_from_other_table
+    sql += " FROM ";
+    sql += select_from_table
+    sql += select_from_other_table
 
+    #
+    # Where
+    #
     if "start_timestamp" in data['search']:
         where += "\n\t" + "AND "+qualify+"start_timestamp >= '"+data['search']['start_timestamp']+"'"
 
@@ -428,8 +452,8 @@ def build_sql(session=[], data=[]):
     #
     # Return SQL
     #
-    #sql += "\n" + " GROUP BY \n\t" + select_base_out_fields
-    #sql += "\n" + " ORDER BY \n\t" + select_base_out_fields
+    #sql += " GROUP BY \n\t" + group_by_fields
+    #sql += " ORDER BY \n\t" + order_by_fields
     sql += "\n" + " OFFSET 0"
     #sql += "\n" + " LIMIT 2"
 
@@ -440,8 +464,4 @@ def build_sql(session=[], data=[]):
         else:
             final_fields.append(f)
             
-    if with_duration == True:
-        fields.append("duration")
-        final_fields.append("duration")
-    
     return sql, final_fields

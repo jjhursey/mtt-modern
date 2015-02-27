@@ -58,10 +58,17 @@ def post_summary():
     payload = {}
 
     payload['phases'] = []
-    payload['phases'].append( 'install' )
+    #payload['phases'].append( 'install' )
+    payload['phases'].append( 'test_build' )
+    #payload['phases'].append( 'test_run' )
+    #payload['phases'].append( 'all' )
 
     payload['columns'] = []
     payload['columns'].append( 'mpi_name' )
+    payload['columns'].append( 'endian' )
+    payload['columns'].append( 'bitness' )
+    payload['columns'].append( 'vpath_mode' )
+    payload['columns'].append( 'duration' )
 
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
@@ -74,7 +81,12 @@ def post_summary():
     r = s.post(url, data=json.dumps(payload), headers=headers)
 
     print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
+    result = r.json()
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+    
+    if result["values"] != None:
+        print "Length: " + str( len(result["values"]) )
+
 
 ################################################################
 #
@@ -109,6 +121,9 @@ def post_complex_summary(phase="install"):
     payload['columns'].append('mpi_version')
     payload['columns'].append('compiler_name')
 
+    if phase == "test_build":
+        payload['columns'].append('test_suite_name')
+        
     ###############################
     # What are the search parameters
     ###############################
