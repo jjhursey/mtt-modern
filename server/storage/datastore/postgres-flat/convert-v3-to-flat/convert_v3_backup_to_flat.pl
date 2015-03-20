@@ -16,10 +16,60 @@ my $do_test_run = 0;
 #my $do_test_run;
 
 my $restrict_test_run;
-#$restrict_test_run = "start_timestamp >= '1-01-2012' AND start_timestamp < '6-01-2012'";
-$restrict_test_run = "start_timestamp < '1-01-2012'";
+##############
+# 2015
+##############
+# (Down from here)
+#$restrict_test_run = "start_timestamp >= '1-01-2015''";
+#
+##############
+# 2014
+##############
+##$restrict_test_run = "start_timestamp >= '1-01-2014' AND start_timestamp < '6-01-2014'";
+##$restrict_test_run = "start_timestamp >= '6-01-2014' AND start_timestamp < '1-01-2015'";
+#
+# (Down from here)
+#$restrict_test_run = "start_timestamp >= '1-01-2014' AND start_timestamp < '4-01-2014'";
+#$restrict_test_run = "start_timestamp >= '4-01-2014' AND start_timestamp < '7-01-2014'";
+#$restrict_test_run = "start_timestamp >= '7-01-2014' AND start_timestamp < '11-01-2014'";
+#$restrict_test_run = "start_timestamp >= '11-01-2014' AND start_timestamp < '1-01-2015'";
+#
+##############
+# 2013
+##############
+##$restrict_test_run = "start_timestamp >= '1-01-2013' AND start_timestamp < '6-01-2013'";
+##$restrict_test_run = "start_timestamp >= '6-01-2013' AND start_timestamp < '1-01-2014'";
+#
+# (Down from here)
+#$restrict_test_run = "start_timestamp >= '1-01-2013' AND start_timestamp < '6-01-2013'";
+#$restrict_test_run = "start_timestamp >= '6-01-2013' AND start_timestamp < '11-01-2013'";
+#$restrict_test_run = "start_timestamp >= '11-01-2013' AND start_timestamp < '1-01-2014'";
+#
+##############
+# 2012
+##############
+##$restrict_test_run = "start_timestamp >= '1-01-2012' AND start_timestamp < '6-01-2012'";
+##$restrict_test_run = "start_timestamp >= '6-01-2012' AND start_timestamp < '1-01-2013'";
+#
+# (Down from here)
+#$restrict_test_run = "start_timestamp >= '1-01-2012' AND start_timestamp < '2-01-2012'";
+#$restrict_test_run = "start_timestamp >= '2-01-2012' AND start_timestamp < '4-04-2012'";
+#$restrict_test_run = "start_timestamp >= '4-04-2012' AND start_timestamp < '5-09-2012'";
+#$restrict_test_run = "start_timestamp >= '5-09-2012' AND start_timestamp < '7-01-2012'";
+$restrict_test_run = "start_timestamp >= '7-01-2012' AND start_timestamp < '8-01-2012'";
+#$restrict_test_run = "start_timestamp >= '8-01-2012' AND start_timestamp < '10-01-2012'";
+#$restrict_test_run = "start_timestamp >= '10-01-2012' AND start_timestamp < '11-01-2012'";
+#$restrict_test_run = "start_timestamp >= '11-01-2012' AND start_timestamp < '1-01-2013'";
+#
+##############
+# < 2012
+##############
+# (Down from here)
+#$restrict_test_run = "start_timestamp < '1-01-2012'";
+#
 
-my $do_pushover_every = 20; # Percentage completed to pushover a message (leave blank if none)
+#my $do_pushover_every = 20; # Percentage completed to pushover a message (leave blank if none)
+my $do_pushover_every; # Percentage completed to pushover a message (leave blank if none)
 my $pushover_message = "MTT Convert Update:";
 my $pushover_script  = "pushover-notice.pl";
 
@@ -28,6 +78,34 @@ my $pushover_script  = "pushover-notice.pl";
 
 # Perform flush after each write to STDOUT
 $| = 1;
+
+my $rng = "";
+
+if( scalar(@ARGV) == 2 ) {
+    $restrict_test_run = "start_timestamp >= '".$ARGV[0]."' AND start_timestamp < '".$ARGV[1]."'";
+    $rng = $ARGV[0]." to ".$ARGV[1];
+}
+elsif( scalar(@ARGV) == 1 ) {
+    $restrict_test_run = "start_timestamp >= '".$ARGV[0]."'";
+    $rng = $ARGV[0]." only";
+}
+elsif( scalar(@ARGV) == 0 ) {
+    $restrict_test_run = "start_timestamp < '1-01-2012'";
+    $rng = "1-01-2012 only (Default)";
+}
+else {
+    print "Error: Invalid argument set\n";
+    exit -1;
+}
+
+if( !defined($do_pushover_every) ) {
+    system("$pushover_script $pushover_message Starting $rng");
+}
+
+#exit 0;
+
+######################################################################
+######################################################################
 
 my $counter = 0;
 my $progress_loop = 100;
@@ -202,7 +280,7 @@ sub convert_submit() {
         "SELECT ".
         "submit_id, hostname, local_username, http_username, mtt_client_version ".
         "FROM ".
-        "submit".
+        "submit ".
         "ORDER BY submit_id ASC "
         );
 
@@ -506,7 +584,10 @@ sub convert_test_run() {
     my $total_rows = 0;
     my $current_num_rows = 0;
 
-    my $current_limit = 200000;
+    #my $current_limit = 150000;
+    #my $current_limit = 200000;
+    #my $current_limit = 400000;
+    my $current_limit = 1600000;
     my $current_offset = 0;
 
     my $last_mpi_install_id = -1;

@@ -1,13 +1,16 @@
 DB=mttv3
 USER=mtt
-BACKUP=mtt-backup-2014-10-29_103109.gz
+SERVER=flux2
+
+#BACKUP=mtt-backup-2014-10-29_103109.gz
+BACKUP=mtt-backup-2015-01-16_104327.gz
 
 echo "-----------"
 echo "Drop/Create the database"
 echo "-----------"
 dropdb $DB
 
-createdb -U $USER -O $USER $DB "MTT Database (v3)" && \
+createdb -U $USER -O $USER $DB "MTT Database (v3)" -h $SERVER && \
 echo "-----------" && \
 echo "Fill DB with the backup data" && \
 echo "-----------" && \

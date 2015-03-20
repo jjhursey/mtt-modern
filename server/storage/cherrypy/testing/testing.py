@@ -58,10 +58,10 @@ def post_summary():
     payload = {}
 
     payload['phases'] = []
-    #payload['phases'].append( 'install' )
+    payload['phases'].append( 'install' )
     #payload['phases'].append( 'test_build' )
     #payload['phases'].append( 'test_run' )
-    payload['phases'].append( 'all' )
+    #payload['phases'].append( 'all' )
 
     payload['columns'] = []
     payload['columns'].append( 'mpi_name' )
@@ -69,10 +69,14 @@ def post_summary():
     #payload['columns'].append( 'bitness' )
     #payload['columns'].append( 'vpath_mode' )
     #payload['columns'].append( 'duration' )
+    #payload['columns'].append( 'test_suite_name' )
+    #payload['columns'].append( 'compiler_name' )
 
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
     payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
+    #payload['search']['test_suite_name']   = 'trivial'
+    payload['search']['compiler_name']   = 'gnu'
     #payload['search']['mpi_install_pass'] = 1
     #payload['search']['mpi_install_fail'] = 0
     #payload['search']['test_build_pass'] = 1

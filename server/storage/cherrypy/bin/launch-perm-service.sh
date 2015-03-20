@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# ./launch-perm-service.sh  |& tee output.txt
+#
+
 while true
 do
     python reporting.py 
