@@ -136,10 +136,16 @@ def validate_search_parameters(db_settings, session=[], data=[], is_summary=True
     #
     # Make sure that only the three fields are specified
     #
-    if len(data) != 3:
-        rtn['status'] = -2
-        rtn['status_msg'] = "Validate Error: Expected exactly 3 fields. %d supplied." % (len(data))
-        return rtn
+    if 'options' not in data:
+        if len(data) != 3:
+            rtn['status'] = -2
+            rtn['status_msg'] = "Validate Error: Expected exactly 3 fields. %d supplied." % (len(data))
+            return rtn
+    else:
+        if len(data) != 4:
+            rtn['status'] = -2
+            rtn['status_msg'] = "Validate Error: Expected exactly 3 fields other than the options field. %d supplied." % (len(data))
+            return rtn
 
     
     #
@@ -273,6 +279,10 @@ def index(db_settings, session=[], data=[]):
     print "SQL: \n" + sql
     cur.execute(sql +";")
     rows = cur.fetchall()
+
+    if 'options' in data and "count_only" in data['options']:
+        fields = ["count"]
+        rows = [ [ len(rows) ] ]
 
     json_rtn = { "fields" : fields, "values" : rows }
 

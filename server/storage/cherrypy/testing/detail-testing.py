@@ -66,6 +66,66 @@ def post_detail():
     if result["values"] != None:
         print "Length: " + str( len(result["values"]) )
 
+################################################################
+#
+################################################################
+def post_detail_options():
+    global base_url
+    
+    s = requests.Session()
+
+    headers = {'content-type': 'application/json'}
+
+    payload = {}
+
+    payload['options'] = {}
+    payload['options']['count_only'] = 1
+    payload['options']['limit'] = 10
+    payload['options']['offset'] = 0
+
+    payload['phases'] = []
+    #payload['phases'].append( 'install' )
+    #payload['phases'].append( 'test_build' )
+    payload['phases'].append( 'test_run' )
+    #payload['phases'].append( 'all' )
+
+    payload['columns'] = []
+    #payload['columns'].append( 'mpi_install_id' )
+    payload['columns'].append( 'mpi_name' )
+    #payload['columns'].append( 'endian' )
+    #payload['columns'].append( 'bitness' )
+    #payload['columns'].append( 'vpath_mode' )
+    #payload['columns'].append( 'duration' )
+    #payload['columns'].append( 'test_suite_name' )
+    payload['columns'].append( 'compiler_name' )
+    
+    payload['search'] = {}
+    payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
+    payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
+    payload['search']['test_suite_name']   = 'trivial'
+    payload['search']['compiler_name']   = 'gnu'
+    #payload['search']['mpi_install_pass'] = 1
+    #payload['search']['mpi_install_fail'] = 0
+    #payload['search']['test_build_pass'] = 1
+    #payload['search']['test_build_fail'] = 1
+    #payload['search']['test_run_pass'] = 1
+    #payload['search']['test_run_fail'] = 1
+    #payload['search']['test_run_skip'] = 1
+    #payload['search']['test_run_timed'] = 1
+
+    
+    url = base_url + "/detail"
+    print "URL: " + url
+    
+    r = s.post(url, data=json.dumps(payload), headers=headers)
+
+    print "Post Detail: %d: %s" % (r.status_code, r.headers['content-type'])
+    result = r.json()
+    print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+
+    if result["values"] != None:
+        print "Length: " + str( len(result["values"]) )
+
 
 ################################################################
 #
@@ -157,7 +217,8 @@ def post_complex_detail(phase="install"):
 # Main Program
 ################################################################
 #get_fields()
-post_detail()
+#post_detail()
+post_detail_options()
 #post_complex_detail("install")
 #post_complex_detail("test_build")
 #post_complex_detail("test_run")

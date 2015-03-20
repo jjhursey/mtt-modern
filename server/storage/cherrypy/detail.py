@@ -79,6 +79,10 @@ def index(db_settings, session=[], data=[]):
     cur.execute(sql +";")
     rows = cur.fetchall()
 
+    if 'options' in data and "count_only" in data['options']:
+        fields = ["count"]
+        rows = [ [ len(rows) ] ]
+
     json_rtn = { "fields" : fields, "values" : rows }
 
     #

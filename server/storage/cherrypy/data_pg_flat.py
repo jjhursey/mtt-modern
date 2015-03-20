@@ -611,7 +611,10 @@ def build_summary_sql(session=[], data=[]):
         
     sql += "\nGROUP BY " + group_by_fields
     sql += "\nORDER BY " + order_by_fields
-    sql += "\nOFFSET 0"
+    if 'options' in data and "offset" in data['options']:
+        sql += "\nOFFSET " + str(data['options']['offset'])
+    if 'options' in data and "limit" in data['options']:
+        sql += "\nLIMIT " + str(data['options']['limit'])
 
     final_fields = []
     for f in fields:
@@ -909,8 +912,10 @@ def build_detail_sql(session=[], data=[]):
     #
     #sql += " GROUP BY \n\t" + group_by_fields
     #sql += " ORDER BY \n\t" + order_by_fields
-    sql += "\n" + " OFFSET 0"
-    #sql += "\n" + " LIMIT 2"
+    if 'options' in data and "offset" in data['options']:
+        sql += "\nOFFSET " + str(data['options']['offset'])
+    if 'options' in data and "limit" in data['options']:
+        sql += "\nLIMIT " + str(data['options']['limit'])
 
     final_fields = []
     for f in fields:

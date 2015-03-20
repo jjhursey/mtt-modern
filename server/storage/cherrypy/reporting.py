@@ -125,12 +125,15 @@ class Reporting(object):
                 phases = []
                 phases.append( "all" )
                 data["phases"] = phases
+                print "DEBUG Phases 1"
             elif type(data["phases"]) is not list:
                 phases = []
                 phases.append( data["phases"] )
                 data["phases"] = phases
+                print "DEBUG Phases 2"
             else:
                 phases = data["phases"]
+                print "DEBUG Phases 3"
             print "Type: %s" %( type(data["phases"]) )
             print "(All) = " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': '))
         # Otherwise build it from the parameters
