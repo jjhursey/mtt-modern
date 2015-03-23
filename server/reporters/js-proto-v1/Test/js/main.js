@@ -4,11 +4,122 @@
  */
 
 $(document).ready(function() {
+    var namespace = {
+        currentPhase: "all"
+
+    };
+
+
+    //Constants
+    var ALLLIST = [
+        "http_username",
+        //"local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+    ];
+    var INSTALLLIST = [
+        "http_username",
+        //"local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "endian",
+        "compiler_name"
+    ];
+    var BUILDRUNLIST = [
+        "http_username",
+        //"local_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "compiler_name",
+        "compiler_version",
+        "test_suite_name"
+    ];
+
+    var AIDETAILLIST = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "endian",
+        "compiler_name",
+        "vpath_mode",
+        "compiler_version",
+        "configure_arguments",
+        "description",
+        "exit_value",
+        "exit_signal",
+        "duration",
+        //"client_serial"
+        "result_message",
+        "result_stdout",
+        "result_stderr",
+        "environment"
+    ];
+    var TBDETAILLIST = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "bitness",
+        "compiler_name",
+        "compiler_version",
+        "suite_name",
+        "description",
+        "exit_value",
+        "exit_signal",
+        "duration",
+        //"client_serial",
+        "result_message",
+        "result_stdout",
+        "result_stderr",
+        "environment"
+    ];
+    var TRDETAILLIST = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "suite_name",
+        "test_name",
+        "np",
+        "full_command",
+        "launcher",
+        "resource_mgr",
+        "parameters",
+        "network",
+        "description",
+        "exit_value",
+        "exit_signal",
+        "duration",
+        //"client_serial",
+        "result_message",
+        "result_stdout",
+        "result_stderr",
+        "environment"
+    ];
 
 
     /*
      ****************************************************
-     REST INTERFACE
+     testing ajax calls
      ****************************************************
      */
 
@@ -56,60 +167,6 @@ $(document).ready(function() {
      ****************************************************
      */
 
-
-    var allList = [
-        "http_username",
-        "local_username",
-        "platform_name",
-        "platform_hardware",
-        "os_name",
-        "mpi_name",
-        "mpi_version",
-        "compiler"
-    ];
-
-    var installlist = [
-        "http_username",
-        "local_username",
-        "platform_name",
-        "platform_hardware",
-        "os_name",
-        "mpi_name",
-        "mpi_version",
-        "bitness",
-        "endian",
-        "compiler"
-    ];
-
-    var buildrunlist = [
-        "http_username",
-        "local_username",
-        "platform_name",
-        "platform_hardware",
-        "os_name",
-        "mpi_name",
-        "mpi_version",
-        "bitness",
-        "compiler",
-        "compiler_version",
-        "suite"
-    ];
-
-    var runlist = [
-        "http_username",
-        "local_username",
-        "platform_name",
-        "platform_hardware",
-        "os_name",
-        "mpi_name",
-        "mpi_version",
-        "bitness",
-        "compiler",
-        "compiler_version",
-        "suite"
-    ]
-
-
     var colList =  [];
     var showColList = [];
     var hideColList = [];
@@ -144,8 +201,12 @@ $(document).ready(function() {
     var fields;
     var values;
 
+    var startMoment;
+    var endMoment;
+    var requestformat =  'YYYY-MM-DD hh:mm:ss a';
+
     var url = "ajax/data/pretty.json";
-    //var url = "http://flux.cs.uwlax.edu/~jjhursey/mtt-tmp/pretty.json";
+    var currentPhase = "all";
 
     function ajaxprototype( ){
         $.ajax({
@@ -173,7 +234,6 @@ $(document).ready(function() {
 
                 fillColList( colList );
                 buildSelect();
-                addHeaders();
                 buildTable( values );
             });
     }
@@ -181,19 +241,6 @@ $(document).ready(function() {
     ajaxprototype( "all" );
 
     function ajaxRequest(){}
-
-
-    function addHeaders(){
-        //console.log( fields );
-        //console.log( values );
-
-        for(var i = 0; i < colList.length; i++){
-            //console.log( colList[i] );
-        }
-    }
-
-
-
 
     /*
      ****************************************************
@@ -215,18 +262,21 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    function phaseChange( phase ){
+    //TODO: pass pullValues start/end dates
+    //special case if num col clicked
+    function phaseChange( phase, specialCase ){
+        currentPhase = phase;
         removeTables();
         addTables( phase );
 
         changeHeaders( phase );
-        pullValues( phase );
+        if( !specialCase ){
+            pullValues( "summary" );
+        }
 
-        buildTable( values );
-
-        //addTables
-        //update show/hide
-        //reload table
+        //TODO: change shown phase in dropdown
+        //$( "select[name=phases] option:selected").prop('value', currentPhase).prop('selected', 'selected');
+        $( "select[name=phases] option:selected").val(currentPhase);
     }
 
     function removeTables(){
@@ -298,7 +348,7 @@ $(document).ready(function() {
                     "<thead>" +
                      "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        "<th rowspan='2'>Local Username</th>" +
+                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -320,7 +370,7 @@ $(document).ready(function() {
                         "<th>Fail</th>" +
                         "<th>Skip</th>" +
                         "<th>Timed</th>" +
-                        "<th>Perf</th>" +
+                        //"<th>Perf</th>" +
                     "</tr>" +
                     "</thead>";
                 break;
@@ -330,7 +380,7 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        "<th rowspan='2'>Local Username</th>" +
+                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -356,7 +406,7 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        "<th rowspan='2'>Local Username</th>" +
+                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -381,7 +431,7 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        "<th rowspan='2'>Local Username</th>" +
+                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -414,29 +464,60 @@ $(document).ready(function() {
         tempTable.append( header );
     }
 
-    function pullValues( phase, start, end ){
-
-        //var http = require('http');
+    //actual REST interaction
+    function pullValues( type, columnIdx ){
         var columnlist;
         var searchlist = getSearchTerms();
+        var url = "http://138.49.30.31:9090/" + type;
+        setMoments( false );
 
 
-        switch( phase ){
-            case "all":
-                columnlist = allList;
-                break;
-            case "install":
-                columnlist = installlist;
-                break;
-            case "build":
-            case "run":
-                columnlist = buildrunlist;
-                break;
-            default:
-                break;
+        if( type === "summary" ){
+            switch( currentPhase ){
+                case "all":
+                    currentPhase = "all";
+                    columnlist = ALLLIST;
+                    break;
+                case "install":
+                    currentPhase = "install";
+                    columnlist = INSTALLLIST;
+                    break;
+                case "build":
+                    currentPhase = "test_build";
+                    columnlist = BUILDRUNLIST;
+                    break;
+                case "run":
+                    currentPhase = "test_run";
+                    columnlist = BUILDRUNLIST;
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            switch( currentPhase ){
+                case "all":
+                    currentPhase = "all";
+                    columnlist = AIDETAILLIST;
+                    break;
+                case "install":
+                    currentPhase = "install";
+                    columnlist = AIDETAILLIST;
+                    break;
+                case "build":
+                    currentPhase = "test_build";
+                    columnlist = TBDETAILLIST;
+                    break;
+                case "run":
+                    currentPhase = "test_run";
+                    columnlist = TRDETAILLIST;
+                    break;
+                default:
+                    break;
+            }
+
         }
 
-        //function buildsearch(){
+
 
             function checkSearchTerm(terms, name) {
                 var val = $('input[name=' + name + ']').val();
@@ -446,60 +527,210 @@ $(document).ready(function() {
             }
 
             function getSearchTerms() {
-                var SEARCH_FIELDS = [ 'org', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
+                var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
                 var terms = {};
 
                 for (var i = SEARCH_FIELDS.length; i--;) {
                     checkSearchTerm(terms, SEARCH_FIELDS[i]);
                 }
 
-                terms.start_timestamp = start;
-                terms.end_timestamp = end;
+                terms.start_timestamp = startMoment;
+                terms.end_timestamp = endMoment;
+
+                //grab nums if clicked on for drill-down
+                if( columnIdx ){
+                    appendSearch( terms, columnIdx );
+                }
 
                 return terms;
             }
 
+        //currentPhase = "all";
         var jsonRequest =
         {
             "columns": columnlist,
-            "phases": phase,
+            "phases": currentPhase,
             "search": searchlist
         };
 
 
     // Setup the request.  The options parameter is
     // the object we defined above.
-
         function makeTheRequest ( json ){
             $.ajax({
                 type: 'POST',
-                url: 'http://138.49.30.31:9090/summary',
+                url: url,
                 dataType: 'json',
                 async: false,
                 data: json,
                 contentType: 'application/json',
                 success: function(data){
-                    alert( JSON.stringify( data ) );
+                    if( type === "summary" ){
+                        buildTable(data.values);
+                    } else {
+                        alert( "Values: " + data.values);
+                        detailsReport( data );
+                    }
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
                     alert(xhr.status);
                     alert(thrownError);
                 }
-
             })
         }
 
-        //makeTheRequest( JSON.stringify(jsonRequest) );
-        makeTheRequest( jsonRequest );
+        makeTheRequest( JSON.stringify(jsonRequest) );
+
+    }
 
 
 
-        alert( JSON.stringify( jsonRequest ) );
+    //"mpi_install_pass",
+    //    "mpi_install_fail",
+    //    "test_build_pass",
+    //    "test_build_fail",
+    //    "test_run_pass",
+    //    "test_run_fail",
+    //    "test_run_skip",
+    //    "test_run_timed"
+    function appendSearch( terms, columnIdx ){
+        var addColumns = [];
 
 
+
+        switch( currentPhase ){
+            case "all":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                    "test_build_pass",
+                    "test_build_fail",
+                    "test_run_pass",
+                    "test_run_fail",
+                    "test_run_skip",
+                    "test_run_timed"
+                ];
+                appendTerms();
+
+                switch( columnIdx ){
+                    case 6:
+                        terms[ "mpi_install_pass" ] = 1;
+                        currentPhase = "install";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 7:
+                        terms[ "mpi_install_fail" ] = 1;
+                        currentPhase = "install";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 8:
+                        terms[ "test_build_pass" ] = 1;
+                        currentPhase = "build";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 9:
+                        terms[ "test_build_fail" ] = 1;
+                        currentPhase = "build";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 10:
+                        terms[ "test_run_pass" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 11:
+                        terms[ "test_run_fail" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 12:
+                        terms[ "test_run_skip" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 13:
+                        terms[ "test_run_timed" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                }
+
+                break;
+            case "install":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                ];
+                appendTerms();
+
+                switch( columnIdx ){
+                    case 9:
+                        terms[ "mpi_install_pass" ] = 1;
+                        break;
+                    case 10:
+                        terms[ "mpi_install_fail" ] = 1;
+                        break;
+                }
+
+                break;
+            case "build":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                ];
+                appendTerms();
+
+                switch( columnIdx ){
+                    case 11:
+                        terms[ "mpi_install_pass" ] = 1;
+                        break;
+                    case 12:
+                        terms[ "mpi_install_fail" ] = 1;
+                        break;
+                }
+
+                break;
+            case "run":
+                addColumns =[
+                    "test_run_pass",
+                    "test_run_fail",
+                    "test_run_skip",
+                    "test_run_timed"
+                ];
+                appendTerms();
+
+                switch( columnIdx ){
+                    case 9:
+                        terms[ "test_run_pass" ] = 1;
+                        break;
+                    case 10:
+                        terms[ "test_run_fail" ] = 1;
+                        break;
+                    case 11:
+                        terms[ "test_run_skip" ] = 1;
+                        break;
+                    case 12:
+                        terms[ "test_run_timed" ] = 1;
+                        break;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        function appendTerms(){
+            for( var i = 0; i < addColumns.length; i++ ){
+                terms[ addColumns[i] ] = 0;
+            }
+
+        }
 
 
     }
+
+
+
     /*
      ****************************************************
      Table Configuration
@@ -537,6 +768,8 @@ $(document).ready(function() {
       MultiSelect and Aggregation Configuration
      ****************************************************
      */
+
+    //TODO: Fix reassignment of function paramater 'arr'
     function buildNewArray ( values, arr ){
         var tmpArray = arr;
         arr = [];
@@ -582,7 +815,6 @@ $(document).ready(function() {
         showStrColList.sort( function( a,b ){ return a-b; } )
     }
 
-    //TODO: Aggregate data
     //TODO: fix extra test/fails
     //NOTE: extra test/fails with have additional text in showColList and hideColList than colList
     function toggleCols() {
@@ -816,6 +1048,19 @@ $(document).ready(function() {
         }
     }
 
+    function setMoments( defaultval ){
+        if( defaultval ){
+        } else {
+            var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
+            var enddate = $( '#enddate' ).val();
+
+            startMoment = startdate.format( requestformat );
+            endMoment = moment( new Date(enddate) ).endOf('day').format( requestformat );
+        }
+    }
+
+
+
 
     /*
      ****************************************************
@@ -826,13 +1071,17 @@ $(document).ready(function() {
 
     //------------------DRILL DOWNS------------------
 
-    //CSS Row selection
+    var sqlbox = $('#sqlbox');
+
     var tabletr = '#example tbody tr';
     var tabletd = '#example tbody td';
 
+    //CSS Row selection
     $( document ).on( 'click', tabletr, function () {
         table.$('tr.selected').removeClass('selected');
         $(this).addClass('selected');
+        //alert( table.row(this).data() );
+
     } );
     $( document ).on( 'dblclick', tabletr, function () {
         if ( $(this).hasClass('selected') ) {
@@ -840,23 +1089,62 @@ $(document).ready(function() {
         }
     });
 
-    //Drill Down - grab td cell data
-    var sqlbox = $('#sqlbox');
 
+   //Drill Down - grab td cell data
     $( document ).on( 'click', tabletd, function () {
         table.$('td.selected').removeClass('selected');
         $(this).addClass('selected');
 
         var field = $('.column_filter').eq( $(this).index() );
+        var data = table.cell(this).data();
+        var row;
+        var colidx;
+        var col;
 
-        if( field.val() === table.cell(this).data() ){
-            field.val("");
-            field.focus();
+        if( isNaN( data ) ){
+            if( field.val() === data ){
+                field.val("");
+                field.focus();
+            } else {
+                field.val(data);
+                field.focus();
+            }
         } else {
-            field.val( table.cell(this).data() );
-            field.focus();
+            colidx = table.cell(this).index().column; // grab col's index
+            row = table.cell(this).index().row;       // grab cell's row index
+            alert( colidx );
+
+            parseRow( table.row( row ).data() );          // gather string data
+            if( data !== 0 ){
+                pullValues( "summary", colidx );          // gather num data with appendSearch()
+            }
         }
+
     } );
+
+    function parseRow( ar ){
+        var columnlist;
+
+        switch( currentPhase ){
+            case "all" :
+                columnlist = ALLLIST;
+                break;
+            case "install":
+                columnlist = INSTALLLIST;
+                break;
+            case "build":
+            case "run":
+                columnlist = BUILDRUNLIST;
+                break;
+        }
+
+        for( var i = 0; i < ar.length; i++ ){
+            var name = "[name=" + columnlist[i] + "]";
+            $( name ).val( ar[i] );
+        }
+    }
+
+
     $( document ).on( 'dblclick', tabletd, function () {
         if ( $(this).hasClass('selected') ) {
             $(this).removeClass('selected');
@@ -927,25 +1215,29 @@ $(document).ready(function() {
 
     //SQL Buttons
 
-    //Summary
+    //-summary
+    function summary(){
+        $('#table').show();
+        currentPhase = $( "select[name=phases] option:selected").attr('value');
+        table.destroy();
+        pullValues( "summary" );
+    }
+
     $( 'button[value=summary]' ).on( 'click', function(){
-        var requestformat =  'YYYY-MM-DD hh:mm:ss a';
-
-        var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
-        var enddate = $( '#enddate' ).val();
-
-        var startMoment = startdate.format( requestformat );
-        var endMoment = moment( new Date(enddate) ).endOf('day').format( requestformat );
-
-        pullValues( "all", startMoment, endMoment );
-
-        console.log( "Date Range: " + startMoment + " to " + endMoment );
-
-
-
+        summary();
+        //console.log( "Date Range: " + startMoment + " to " + endMoment );
     });
 
-    //start over
+    //details
+    $( document ).on( 'click', 'button[value=details]', function() {
+        currentPhase = $( "select[name=phases] option:selected").attr('value');
+        $('#table').hide();
+        //table.destroy();
+        pullValues( "detail" );
+    });
+
+
+    //-start over
     $( document ).on( 'click', 'button[value=startover]', function(){
 
         $( 'input[type=text]').val('');
@@ -958,7 +1250,7 @@ $(document).ready(function() {
         //$('select[name^="salesrep"] option[value="Bruce Jones"]').attr("selected","selected");
     });
 
-    //filter
+    //-filter
     var state = true;
 
     $('button[value=filter]').on( 'click', function(){
@@ -1055,14 +1347,12 @@ $(document).ready(function() {
         toggleClear();
         addClass();
 
-        //alert( $('#org').parents('tr').attr('data-column') );
         color = extend.css('background-color');
         state = ( color === lightcoral );
     });
 
-    //performance
+    //-performance
     //$('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
-    $('button[value=perf]').on( 'click', function() { pullValues( "all" ) });
 
 
 
@@ -1084,5 +1374,50 @@ $(document).ready(function() {
     $('#show-hide').click( function(){
         toggleCols();
     } );
+
+
+
+
+
+
+    //-------------------Detail HTML-------------------
+    function detailsReport( json ){
+        var fields = json.fields;
+        var values = json.values;
+
+        var table = "<div class='detailsReport'>" +
+            "<table>" +
+            "  <tbody> ";
+
+        var i = 0;
+        var k = 0;
+        for(; i < values.length; i++ ) {
+            var table = "<div class='detailsReport'>" +
+                "<table>" +
+                "  <tbody> ";
+
+            for(; k < fields.length; k++){
+                if( k === 0 ){
+                    table +=
+                        "<tr>" +
+                        "<td> # </td>" +
+                        "<td>" + (i+1) + "</td>" +
+                        "</tr>";
+                }
+
+                table +=
+                    "<tr>" +
+                    "<td>" + fields[k] + "</td>" +
+                    "<td>" + values[i][k] + "</td>" +
+                    "</tr>";
+            }
+
+            table += " </tbody></table> ";
+
+            $('#table').after( table );
+        }
+
+    }
+
 
 });
