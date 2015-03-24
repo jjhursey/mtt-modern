@@ -3,12 +3,19 @@
  * Last Edited: 11/6/14
  */
 
+//1424
+
 $(document).ready(function() {
-    var namespace = {
-        currentPhase: "all"
 
+    //TODO: bitness drilldown exception
+    //TODO: Start over to automatic query
+
+    var ns = {
+        currentPhase: "all",
+        /*sql*/state: "true",
+        startMoment: 0,
+        endMoment: 0
     };
-
 
     //Constants
     var ALLLIST = [
@@ -116,48 +123,13 @@ $(document).ready(function() {
         "environment"
     ];
 
+    var URL =  "ajax/data/pretty.json";
+    var REQUESTFORMAT = 'YYYY-MM-DD hh:mm:ss a';
 
-    /*
-     ****************************************************
-     testing ajax calls
-     ****************************************************
-     */
+    //for datepicker
+    var start = $( "#startdate" );
+    var end = $( "#enddate" );
 
-    var httpRequest;
-
-    function makeRequest(url) {
-        if (window.XMLHttpRequest) { // Mozilla, Safari, ...
-            httpRequest = new XMLHttpRequest();
-        } else if (window.ActiveXObject) { // IE
-            try {
-                httpRequest = new ActiveXObject("Msxml2.XMLHTTP");
-            }
-            catch (e) {
-                try {
-                    httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
-                }
-                catch (e) {}
-            }
-        }
-
-        if (!httpRequest) {
-            alert('Giving up :( Cannot create an XMLHTTP instance');
-            return false;
-        }
-        httpRequest.onreadystatechange = alertContents;
-        httpRequest.open('GET', url);
-        httpRequest.send();
-    }
-
-    function alertContents() {
-        if (httpRequest.readyState === 4) {
-            if (httpRequest.status === 200) {
-                alert(httpRequest.responseText);
-            } else {
-                alert('There was a problem with the request. ' + httpRequest.status);
-            }
-        }
-    }
 
     /*
      ****************************************************
@@ -170,8 +142,6 @@ $(document).ready(function() {
     var colList =  [];
     var showColList = [];
     var hideColList = [];
-
-    var allphases;
 
     var stringCols = [
         //"http_username",
@@ -203,44 +173,57 @@ $(document).ready(function() {
 
     var startMoment;
     var endMoment;
-    var requestformat =  'YYYY-MM-DD hh:mm:ss a';
 
-    var url = "ajax/data/pretty.json";
     var currentPhase = "all";
 
-    function ajaxprototype( ){
-        $.ajax({
-            dataType: "json",
-            url: url
-        })
-            .done( function( data ){
-                //fill variables
-                fields = data.fields;
-                values = data.values;
+    (function init( ){
+        //TODO: Set time to past two weeks
+        dateInit();
 
-                for( var i = 0; i < data.fields.length; i++ ){
-                    //setHeaders( data.fields[i] );
-                    colList.push( data.fields[i] );
-                    showColList.push( data.fields[i] );
-                }
+        pullValues( "summary" );
+    })();
 
-                for( var i = 0; i < colList.length; i++ ){
-                    if( i < 6 ){
-                        stringCols.push( colList[i] );
-                    } else {
-                        intCols.push( colList[i] );
-                    }
-                }
 
-                fillColList( colList );
-                buildSelect();
-                buildTable( values );
-            });
+
+
+    function dateInit(){
+        var tempstart = new Date(2014, 10, 29, 0, 0, 0);
+
+        //set dropdown menu
+        $( 'select[name=dates]' ).val( 'past2weeks' );
+
+        var absoluteMin = new Date(2011, 0, 1);
+        var absoluteMax = new Date(2014, 9, 29);
+
+        //datepicker configuration
+        start.datepicker({
+            minDate: absoluteMin,
+            maxDate: absoluteMax,
+            changeMonth: true,
+            changeYear: true,
+            numberOfMonths: 2,
+            onClose: function (selectedDate) {
+                end.datepicker("option", "minDate", selectedDate);
+            }
+        });
+        end.datepicker({
+            minDate: absoluteMin,
+            maxDate: absoluteMax,
+            changeMonth: true,
+            changeYear: true,
+            numberOfMonths: 2,
+            onClose: function (selectedDate) {
+                start.datepicker("option", "maxDate", selectedDate);
+            }
+        });
+
+
+
+        //field init
+        start.datepicker( 'setDate', tempstart );
+        end.datepicker( 'setDate', tempstart );
     }
 
-    ajaxprototype( "all" );
-
-    function ajaxRequest(){}
 
     /*
      ****************************************************
@@ -275,8 +258,7 @@ $(document).ready(function() {
         }
 
         //TODO: change shown phase in dropdown
-        //$( "select[name=phases] option:selected").prop('value', currentPhase).prop('selected', 'selected');
-        $( "select[name=phases] option:selected").val(currentPhase);
+        $( "select[name=phases] ").val(currentPhase);
     }
 
     function removeTables(){
@@ -469,7 +451,9 @@ $(document).ready(function() {
         var columnlist;
         var searchlist = getSearchTerms();
         var url = "http://138.49.30.31:9090/" + type;
-        setMoments( false );
+        setMoments();
+
+        console.log( startMoment + " TO " + endMoment );
 
 
         if( type === "summary" ){
@@ -567,8 +551,9 @@ $(document).ready(function() {
                 success: function(data){
                     if( type === "summary" ){
                         buildTable(data.values);
+                        fillColList( colList );
+                        buildSelect();
                     } else {
-                        alert( "Values: " + data.values);
                         detailsReport( data );
                     }
                 },
@@ -737,14 +722,10 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    function  buildTable( input ){
+    function buildTable( input ){
         table = $('#example').DataTable({
             "dom": '<"top">Rrtp<"bottom"li><"clear">',
             data: input
-            //"columnDefs": [{
-            //    "visible": false,
-            //    "targets": -1
-            //}]
         });
     }
 
@@ -940,40 +921,9 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    var start = $( "#startdate" );
-    var end = $( "#enddate" );
-
     //Uncommment when implementing final
     //start.datepicker().datepicker('setDate', "-1d" );
     //end.datepicker().datepicker('setDate', new Date() );
-
-    var absoluteMin = new Date(2011, 0, 1);
-    var absoluteMax = new Date(2014, 9, 29);
-
-    $(function() {
-        start.datepicker({
-            //defaultDate: "+1w",
-            defaultDate: "-1d",
-            minDate: absoluteMin,
-            maxDate: absoluteMax,
-            changeMonth: true,
-            numberOfMonths: 2,
-            onClose: function (selectedDate) {
-                end.datepicker("option", "minDate", selectedDate);
-            }
-        });
-        end.datepicker({
-            //defaultDate: "+1w",
-            defaultDate: new Date(),
-            minDate: absoluteMin,
-            maxDate: absoluteMax,
-            changeMonth: true,
-            numberOfMonths: 2,
-            onClose: function (selectedDate) {
-                start.datepicker("option", "maxDate", selectedDate);
-            }
-        });
-    });
 
     function getDate( selection ){
         var date = $( '#startdate' ).val();
@@ -1002,7 +952,9 @@ $(document).ready(function() {
     }
 
     function setFields( date ){
-        var now = new Date();
+        //var now = new Date();
+        var now = new Date(2014, 10, 29, 0, 0, 0);
+        console.log( "NOW: " + now  );
 
         switch( date ){
             case "today":
@@ -1048,15 +1000,13 @@ $(document).ready(function() {
         }
     }
 
-    function setMoments( defaultval ){
-        if( defaultval ){
-        } else {
-            var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
-            var enddate = $( '#enddate' ).val();
+    function setMoments(){
+        var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
+        var enddate = $( '#enddate' ).val();
 
-            startMoment = startdate.format( requestformat );
-            endMoment = moment( new Date(enddate) ).endOf('day').format( requestformat );
-        }
+        startMoment = startdate.format( REQUESTFORMAT );
+        endMoment = moment( new Date(enddate) ).endOf('day');
+        endMoment = endMoment.format( REQUESTFORMAT );
     }
 
 
@@ -1099,7 +1049,6 @@ $(document).ready(function() {
         var data = table.cell(this).data();
         var row;
         var colidx;
-        var col;
 
         if( isNaN( data ) ){
             if( field.val() === data ){
@@ -1112,7 +1061,6 @@ $(document).ready(function() {
         } else {
             colidx = table.cell(this).index().column; // grab col's index
             row = table.cell(this).index().row;       // grab cell's row index
-            alert( colidx );
 
             parseRow( table.row( row ).data() );          // gather string data
             if( data !== 0 ){
@@ -1353,6 +1301,7 @@ $(document).ready(function() {
 
     //-performance
     //$('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
+    $('button[value=perf]').on( 'click', function() { start.datepicker( 'setDate', tempstart  ) });
 
 
 
@@ -1360,6 +1309,14 @@ $(document).ready(function() {
 
     //filter fields
     $( document ).on( 'keyup click focus', 'input.column_filter', function() {
+        //if( $( '.extend' ).first()
+        //                  .
+        //){
+        //
+        //}
+
+
+
         if( !state ) {
             filterColumn( $(this).parents('tr').attr('data-column') );
         }
@@ -1382,42 +1339,8 @@ $(document).ready(function() {
 
     //-------------------Detail HTML-------------------
     function detailsReport( json ){
-        var fields = json.fields;
-        var values = json.values;
-
-        var table = "<div class='detailsReport'>" +
-            "<table>" +
-            "  <tbody> ";
-
-        var i = 0;
-        var k = 0;
-        for(; i < values.length; i++ ) {
-            var table = "<div class='detailsReport'>" +
-                "<table>" +
-                "  <tbody> ";
-
-            for(; k < fields.length; k++){
-                if( k === 0 ){
-                    table +=
-                        "<tr>" +
-                        "<td> # </td>" +
-                        "<td>" + (i+1) + "</td>" +
-                        "</tr>";
-                }
-
-                table +=
-                    "<tr>" +
-                    "<td>" + fields[k] + "</td>" +
-                    "<td>" + values[i][k] + "</td>" +
-                    "</tr>";
-            }
-
-            table += " </tbody></table> ";
-
-            $('#table').after( table );
-        }
-
+        var detailsTableTemplate = Handlebars.compile($('#details-table').html());
+        $('#details-report').html(detailsTableTemplate(json));
     }
-
 
 });

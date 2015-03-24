@@ -19,8 +19,8 @@
     <script type="text/javascript" charset="utf8" src="//datatables.net/release-datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
     <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.min.js"></script>
 
-    <!-- Typeahead -->
-    <script type="text/javascript" charset="utf8" src="js/typeahead.js"></script>
+    <!-- Handlebars -->
+    <script type="text/javascript" charset="utf8" src="js/handlebars-v3.0.0.js"></script>
 
     <!--Moment-->
     <script type="text/javascript" charset="utf8" src="js/moment.js"></script>
@@ -171,5 +171,26 @@
                 <tbody></tbody>
             </table>
         </div>
+    <div id="details-report" ></div>
+
+
+    <!-- BEGIN Handlebars -->
+
+    <!-- Details Table -->
+    <script id="details-table" type="text/x-handlebars-template">
+        {{#each values}}
+        <table>
+            {{#each this}}
+            <tr>
+                <td class="label">{{lookup ../../fields @index}}</td>
+                <td>{{this}}</td>
+            </tr>
+            {{/each}}
+        </table>
+        {{/each}}
+    </script>
+
+    <!-- END Handlebars -->
+
     </body>
 </html>
