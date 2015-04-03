@@ -5,7 +5,22 @@
 
 //1424
 
+/*
+    Where you left off:
+        - Confusing query not sending request. Might be due to load priorities or initialization timing.
+        - Show/Hide not populating.
+        - Not receiving values for Test run query
+        - fix CSS
+        - implement more Handlebars
+ */
+
 $(document).ready(function() {
+
+    /*
+     ****************************************************
+     BEGIN VARIABLE DECLARATION
+     ****************************************************
+     */
 
     //TODO: bitness drilldown exception
     //TODO: Start over to automatic query
@@ -70,7 +85,6 @@ $(document).ready(function() {
         "exit_value",
         "exit_signal",
         "duration",
-        //"client_serial"
         "result_message",
         "result_stdout",
         "result_stderr",
@@ -86,12 +100,11 @@ $(document).ready(function() {
         "bitness",
         "compiler_name",
         "compiler_version",
-        "suite_name",
+        "test_suite_name",
         "description",
         "exit_value",
         "exit_signal",
         "duration",
-        //"client_serial",
         "result_message",
         "result_stdout",
         "result_stderr",
@@ -104,7 +117,7 @@ $(document).ready(function() {
         "os_name",
         "mpi_name",
         "mpi_version",
-        "suite_name",
+        "test_suite_name",
         "test_name",
         "np",
         "full_command",
@@ -116,29 +129,19 @@ $(document).ready(function() {
         "exit_value",
         "exit_signal",
         "duration",
-        //"client_serial",
         "result_message",
         "result_stdout",
         "result_stderr",
         "environment"
     ];
 
-    var URL =  "ajax/data/pretty.json";
     var REQUESTFORMAT = 'YYYY-MM-DD hh:mm:ss a';
 
     //for datepicker
     var start = $( "#startdate" );
     var end = $( "#enddate" );
 
-
-    /*
-     ****************************************************
-     Variable Declaration and Ajax Call
-        Used in: Table Configuration
-                 MultiSelect
-     ****************************************************
-     */
-
+    //
     var colList =  [];
     var showColList = [];
     var hideColList = [];
@@ -175,16 +178,18 @@ $(document).ready(function() {
     var endMoment;
 
     var currentPhase = "all";
+    /*
+     ****************************************************
+     END VARIABLE DECLARATION
+     ****************************************************
+     */
+
+    // Site Initilization
 
     (function init( ){
-        //TODO: Set time to past two weeks
         dateInit();
-
         pullValues( "summary" );
     })();
-
-
-
 
     function dateInit(){
         var tempstart = new Date(2014, 10, 29, 0, 0, 0);
@@ -245,19 +250,24 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //TODO: pass pullValues start/end dates
     //special case if num col clicked
     function phaseChange( phase, specialCase ){
         currentPhase = phase;
         removeTables();
         addTables( phase );
 
+        //enable details button
+        if( phase === 'install' || phase === 'build' || phase === 'run' ){
+            $('button[value=details]').removeAttr('disabled');
+        } else {
+            $('button[value=details]').prop('disabled', 'disabled');
+        }
+
         changeHeaders( phase );
         if( !specialCase ){
             pullValues( "summary" );
         }
 
-        //TODO: change shown phase in dropdown
         $( "select[name=phases] ").val(currentPhase);
     }
 
@@ -448,13 +458,12 @@ $(document).ready(function() {
 
     //actual REST interaction
     function pullValues( type, columnIdx ){
+        var resultStart;
+
         var columnlist;
         var searchlist = getSearchTerms();
         var url = "http://138.49.30.31:9090/" + type;
         setMoments();
-
-        console.log( startMoment + " TO " + endMoment );
-
 
         if( type === "summary" ){
             switch( currentPhase ){
@@ -482,18 +491,22 @@ $(document).ready(function() {
                 case "all":
                     currentPhase = "all";
                     columnlist = AIDETAILLIST;
+                    resultStart = 19;
                     break;
                 case "install":
                     currentPhase = "install";
                     columnlist = AIDETAILLIST;
+                    resultStart = 19;
                     break;
                 case "build":
                     currentPhase = "test_build";
                     columnlist = TBDETAILLIST;
+                    resultStart = 17;
                     break;
                 case "run":
                     currentPhase = "test_run";
                     columnlist = TRDETAILLIST;
+                    resultStart = 21;
                     break;
                 default:
                     break;
@@ -529,6 +542,12 @@ $(document).ready(function() {
                 return terms;
             }
 
+        var options = {
+            //"count_only": 1,
+            "limit": 3,
+            "offset": 0
+        }
+
         //currentPhase = "all";
         var jsonRequest =
         {
@@ -536,6 +555,10 @@ $(document).ready(function() {
             "phases": currentPhase,
             "search": searchlist
         };
+
+        if( type === "detail" ){
+            jsonRequest.options = options;
+        }
 
 
     // Setup the request.  The options parameter is
@@ -554,7 +577,7 @@ $(document).ready(function() {
                         fillColList( colList );
                         buildSelect();
                     } else {
-                        detailsReport( data );
+                        detailsReport( data, resultStart );
                     }
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1065,6 +1088,7 @@ $(document).ready(function() {
             parseRow( table.row( row ).data() );          // gather string data
             if( data !== 0 ){
                 pullValues( "summary", colidx );          // gather num data with appendSearch()
+                $('button[value=details]').removeAttr('disabled');
             }
         }
 
@@ -1142,8 +1166,12 @@ $(document).ready(function() {
     });
 
 
+    /*
+     ****************************************************
+     Buttons
+     ****************************************************
+     */
 
-    //------------------SQL MODE------------------
 
     //dates dropdown
     $( 'select[name=dates]' ).on( 'change', function(){
@@ -1166,22 +1194,26 @@ $(document).ready(function() {
     //-summary
     function summary(){
         $('#table').show();
+        $('#details-report').hide();
         currentPhase = $( "select[name=phases] option:selected").attr('value');
         table.destroy();
         pullValues( "summary" );
+        $('button[value=details]').prop('disabled', 'disabled');
     }
 
     $( 'button[value=summary]' ).on( 'click', function(){
         summary();
-        //console.log( "Date Range: " + startMoment + " to " + endMoment );
+        $('button[value=filter]').removeAttr('disabled');
     });
 
     //details
     $( document ).on( 'click', 'button[value=details]', function() {
         currentPhase = $( "select[name=phases] option:selected").attr('value');
         $('#table').hide();
+        $('#details-report').show();
         //table.destroy();
         pullValues( "detail" );
+        $('button[value=filter]').prop('disabled', 'disabled');
     });
 
 
@@ -1217,6 +1249,8 @@ $(document).ready(function() {
             }
         }
 
+
+        //TODO: make performance and details disabled upon switching from filter mode
         function disableForms(){
             var select = $('.extend select');
             var phase = $( 'select[name=phases]' );
@@ -1301,7 +1335,9 @@ $(document).ready(function() {
 
     //-performance
     //$('button[value=perf]').on( 'click', function() { makeRequest('http://flux.cs.uwlax.edu:9090/fields') });
-    $('button[value=perf]').on( 'click', function() { start.datepicker( 'setDate', tempstart  ) });
+    $('button[value=perf]').on( 'click', function() {
+        alert("Not currently implemented.");
+    });
 
 
 
@@ -1314,7 +1350,6 @@ $(document).ready(function() {
         //){
         //
         //}
-
 
 
         if( !state ) {
@@ -1333,14 +1368,22 @@ $(document).ready(function() {
     } );
 
 
-
-
-
-
     //-------------------Detail HTML-------------------
-    function detailsReport( json ){
+    function detailsReport( json, n ){
         var detailsTableTemplate = Handlebars.compile($('#details-table').html());
-        $('#details-report').html(detailsTableTemplate(json));
+        $('#details-report').html(detailsTableTemplate(json))
+                            .addClass('detailsTable');
+
+        var tmp = '.detailsTable table tr:nth-child(n+' + n + '):nth-child(-n+' + (n+1) + ') td';
+
+        $( tmp ).addClass('highlight')
+                .wrapInner( '<pre></pre>' );
     }
 
+
+    //For number of table with offset of 1
+    Handlebars.registerHelper("offset", function(value, options)
+    {
+        return parseInt(value) + 1;
+    });
 });

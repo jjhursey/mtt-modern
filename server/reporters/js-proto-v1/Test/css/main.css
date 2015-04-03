@@ -191,3 +191,34 @@ table.dataTable tbody td.selected {
 .hide {
     display: none;
 }
+
+
+
+/* details table design */
+#details-report {}
+
+.detailsTable table {
+    margin-top:10px;padding:0px;
+    width:100%;
+    border:1px solid #000000;
+    white-space: normal;
+}.detailsTable th {
+    width: 130px;
+    background-color: steelblue;
+    color: aliceblue;
+     border:0px solid #000000;
+ }.detailsTable tr:nth-child(odd) { background-color: #eeeeee }
+  .detailsTable tr:nth-child(even){ background-color: white }
+  .detailsTable td{
+      font-size: 14px;
+  }
+
+
+  pre {
+      white-space: pre-line;
+      font-size:10px;
+  }
+
+  .highlight{
+      background-color: lightgreen;
+  }

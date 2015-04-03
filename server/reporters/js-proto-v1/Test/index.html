@@ -2,6 +2,8 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
+    <link rel="shortcut icon" href="http://www.open-mpi.org/favicon.ico">
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="css/dataTables.colReorder.css">
@@ -125,8 +127,8 @@
             <div class ="sqltoolbars" id="sqltoolbar1" >
                 <button class="secondary" value="startover" > Start Over </button>
                 <button class="primary" value="summary"> Summary </button>
-                 <button class="primary" value="details"> Details </button>
-                <button class="primary" value="perf"> Performance </button>
+                 <button class="primary" value="details" disabled> Details </button>
+                <button class="primary" value="perf" disabled> Performance </button>
                 <button class="secondary" value="filter" > Toggle Local Filter </button>
             </div>
             <div class ="sqltoolbars" id="sqltoolbar2" >
@@ -171,7 +173,7 @@
                 <tbody></tbody>
             </table>
         </div>
-    <div id="details-report" ></div>
+    <div id="details-report"></div>
 
 
     <!-- BEGIN Handlebars -->
@@ -180,10 +182,16 @@
     <script id="details-table" type="text/x-handlebars-template">
         {{#each values}}
         <table>
+            <tr>
+                <th>#</th>
+                <td> {{offset @index}} </td>
+            </tr>
             {{#each this}}
             <tr>
-                <td class="label">{{lookup ../../fields @index}}</td>
-                <td>{{this}}</td>
+                <th class="label">{{lookup ../../fields @index}}</th>
+                <td>
+                    {{this}}
+                </td>
             </tr>
             {{/each}}
         </table>
