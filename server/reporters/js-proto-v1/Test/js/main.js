@@ -1,7 +1,7 @@
 /**
- * Created by thomaslynch on 10/16/14.
- * Last Edited: 11/6/14
- */
+* Created by thomaslynch on 10/16/14.
+* Last Edited: 11/6/14
+*/
 
 //1424
 
@@ -12,10 +12,9 @@
         - Not receiving values for Test run query
         - fix CSS
         - implement more Handlebars
- */
+*/
 
 $(document).ready(function() {
-
     /*
      ****************************************************
      BEGIN VARIABLE DECLARATION
@@ -23,7 +22,9 @@ $(document).ready(function() {
      */
 
     //TODO: bitness drilldown exception
-    //TODO: Start over to automatic query
+    //TODO: change dropdown options to match POST settings (all switch statements here...)
+    //TODO: Change state with start over button ( w/ automatic query )
+    //TODO: save last json request to compare - possibly use cache ( e.g. when hiding datatable )
 
     var ns = {
         currentPhase: "all",
@@ -177,6 +178,9 @@ $(document).ready(function() {
     var startMoment;
     var endMoment;
 
+    var lastJSON = {};
+    var reqLimit = 25;
+
     var currentPhase = "all";
     /*
      ****************************************************
@@ -188,6 +192,14 @@ $(document).ready(function() {
 
     (function init( ){
         dateInit();
+        fillColList( colList );
+
+        paginationInit();
+        countInit();
+        $('#details').hide();
+
+        buildSelect();
+        //buildTable();
         pullValues( "summary" );
     })();
 
@@ -229,6 +241,284 @@ $(document).ready(function() {
         end.datepicker( 'setDate', tempstart );
     }
 
+    //actual REST interaction
+    /**
+     * POST REQUEST FUNCTIONS
+     */
+
+    /**
+     *
+     * @param type - detail/summary
+     * @param columnIdx -
+     */
+    function pullValues( type, columnIdx ){
+        var resultStart;
+        var columnlist ="";
+
+        setMoments();
+        var searchlist = getSearchTerms();
+        var url = "http://138.49.30.31:9090/" + type;
+        var isSum;
+
+        type === "summary"? isSum = true : isSum = false ;
+
+        grabColumns();
+
+        var jsonRequest =
+        {
+            "columns": columnlist,
+            "phases": currentPhase,
+            "search": searchlist
+        };
+
+        if( isSum ){
+            makeTheRequest( JSON.stringify(jsonRequest) );
+        } else {
+            jsonRequest.options = { "count_only": 1 };
+            makeTheRequest( JSON.stringify(jsonRequest), true ); //grab count of results
+        }
+
+
+        // Setup the request.  The options parameter is
+        // the object we defined above.
+        function makeTheRequest ( json, check ){
+            $.ajax({
+                type: 'POST',
+                url: url,
+                dataType: 'json',
+                async: false,
+                data: json,
+                contentType: 'application/json',
+                success: function(data){
+                    if( isSum ){
+                        buildTable( data.values );
+                        //fillColList( colList );
+                        //buildSelect();
+                    } else {
+                        if( check ){
+                            throttleReturn( data.values[0][0] );
+                        } else {
+                            detailsReport( data, resultStart );
+                        }
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+            })
+        }
+
+
+        function grabColumns() {
+            //TODO: switch here
+            if ( isSum ) {
+                switch (currentPhase) {
+                    case "all":
+                        columnlist = ALLLIST;
+                        break;
+                    case "install":
+                        columnlist = INSTALLLIST;
+                        break;
+                    case "build":
+                        currentPhase = "test_build";
+                        columnlist = BUILDRUNLIST;
+                        break;
+                    case "run":
+                        currentPhase = "test_run";
+                        columnlist = BUILDRUNLIST;
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                switch (currentPhase) {
+                    case "all":
+                        columnlist = AIDETAILLIST;
+                        resultStart = 19;
+                        break;
+                    case "install":
+                        columnlist = AIDETAILLIST;
+                        resultStart = 19;
+                        break;
+                    case "build":
+                        currentPhase = "test_build";
+                        columnlist = TBDETAILLIST;
+                        resultStart = 17;
+                        break;
+                    case "run":
+                        currentPhase = "test_run";
+                        columnlist = TRDETAILLIST;
+                        resultStart = 21;
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+        }
+
+        function checkSearchTerm(terms, name) {
+            var val = $('input[name=' + name + ']').val();
+            if (val) {
+                terms[name] = val;
+            }
+        }
+
+        function getSearchTerms() {
+            var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
+            var terms = {};
+
+            for (var i = SEARCH_FIELDS.length; i--;) {
+                checkSearchTerm(terms, SEARCH_FIELDS[i]);
+            }
+
+            terms.start_timestamp = startMoment;
+            terms.end_timestamp = endMoment;
+
+            //grab nums if clicked on for drill-down
+            if( columnIdx ){
+                appendSearch( terms, columnIdx );
+            }
+
+            return terms;
+        }
+
+        //what if offset > count?
+        function throttleReturn( data ){
+            setMax( Math.ceil(data/reqLimit) );
+
+            jsonRequest.options = {
+                "limit": reqLimit,
+                "offset": 0
+            };
+            makeTheRequest( JSON.stringify(jsonRequest), false ); //grab first batch of results
+        }
+
+    }
+
+    function appendSearch( terms, columnIdx ){
+        var addColumns = [];
+
+        switch( currentPhase ){
+            case "all":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                    "test_build_pass",
+                    "test_build_fail",
+                    "test_run_pass",
+                    "test_run_fail",
+                    "test_run_skip",
+                    "test_run_timed"
+                ];
+
+                switch( columnIdx ){
+                    case 6:
+                        terms[ "mpi_install_pass" ] = 1;
+                        currentPhase = "install";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 7:
+                        terms[ "mpi_install_fail" ] = 1;
+                        currentPhase = "install";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 8:
+                        terms[ "test_build_pass" ] = 1;
+                        currentPhase = "build";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 9:
+                        terms[ "test_build_fail" ] = 1;
+                        currentPhase = "build";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 10:
+                        terms[ "test_run_pass" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 11:
+                        terms[ "test_run_fail" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 12:
+                        terms[ "test_run_skip" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                    case 13:
+                        terms[ "test_run_timed" ] = 1;
+                        currentPhase = "run";
+                        phaseChange( currentPhase, true );
+                        break;
+                }
+
+                break;
+            case "install":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                ];
+
+                switch( columnIdx ){
+                    case 9:
+                        terms[ "mpi_install_pass" ] = 1;
+                        break;
+                    case 10:
+                        terms[ "mpi_install_fail" ] = 1;
+                        break;
+                }
+
+                break;
+            case "build":
+                addColumns = [
+                    "mpi_install_pass",
+                    "mpi_install_fail",
+                ];
+
+                switch( columnIdx ){
+                    case 11:
+                        terms[ "mpi_install_pass" ] = 1;
+                        break;
+                    case 12:
+                        terms[ "mpi_install_fail" ] = 1;
+                        break;
+                }
+
+                break;
+            case "run":
+                addColumns =[
+                    "test_run_pass",
+                    "test_run_fail",
+                    "test_run_skip",
+                    "test_run_timed"
+                ];
+
+                switch( columnIdx ){
+                    case 9:
+                        terms[ "test_run_pass" ] = 1;
+                        break;
+                    case 10:
+                        terms[ "test_run_fail" ] = 1;
+                        break;
+                    case 11:
+                        terms[ "test_run_skip" ] = 1;
+                        break;
+                    case 12:
+                        terms[ "test_run_timed" ] = 1;
+                        break;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+    }
+
 
     /*
      ****************************************************
@@ -237,11 +527,11 @@ $(document).ready(function() {
      */
 
     function filterColumn ( i ) {
-        $('#example').DataTable().column( i ).search(
-            $( '.column_filter' ).eq( i ).val(),
-            true,
-            false
-        ).draw();
+        //$('#example').DataTable().column( i ).search(
+        //    $( '.column_filter' ).eq( i ).val(),
+        //    true,
+        //    false
+        //).draw();
     }
 
     /*
@@ -456,289 +746,6 @@ $(document).ready(function() {
         tempTable.append( header );
     }
 
-    //actual REST interaction
-    function pullValues( type, columnIdx ){
-        var resultStart;
-
-        var columnlist;
-        var searchlist = getSearchTerms();
-        var url = "http://138.49.30.31:9090/" + type;
-        setMoments();
-
-        if( type === "summary" ){
-            switch( currentPhase ){
-                case "all":
-                    currentPhase = "all";
-                    columnlist = ALLLIST;
-                    break;
-                case "install":
-                    currentPhase = "install";
-                    columnlist = INSTALLLIST;
-                    break;
-                case "build":
-                    currentPhase = "test_build";
-                    columnlist = BUILDRUNLIST;
-                    break;
-                case "run":
-                    currentPhase = "test_run";
-                    columnlist = BUILDRUNLIST;
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            switch( currentPhase ){
-                case "all":
-                    currentPhase = "all";
-                    columnlist = AIDETAILLIST;
-                    resultStart = 19;
-                    break;
-                case "install":
-                    currentPhase = "install";
-                    columnlist = AIDETAILLIST;
-                    resultStart = 19;
-                    break;
-                case "build":
-                    currentPhase = "test_build";
-                    columnlist = TBDETAILLIST;
-                    resultStart = 17;
-                    break;
-                case "run":
-                    currentPhase = "test_run";
-                    columnlist = TRDETAILLIST;
-                    resultStart = 21;
-                    break;
-                default:
-                    break;
-            }
-
-        }
-
-
-
-            function checkSearchTerm(terms, name) {
-                var val = $('input[name=' + name + ']').val();
-                if (val) {
-                    terms[name] = val;
-                }
-            }
-
-            function getSearchTerms() {
-                var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
-                var terms = {};
-
-                for (var i = SEARCH_FIELDS.length; i--;) {
-                    checkSearchTerm(terms, SEARCH_FIELDS[i]);
-                }
-
-                terms.start_timestamp = startMoment;
-                terms.end_timestamp = endMoment;
-
-                //grab nums if clicked on for drill-down
-                if( columnIdx ){
-                    appendSearch( terms, columnIdx );
-                }
-
-                return terms;
-            }
-
-        var options = {
-            //"count_only": 1,
-            "limit": 3,
-            "offset": 0
-        }
-
-        //currentPhase = "all";
-        var jsonRequest =
-        {
-            "columns": columnlist,
-            "phases": currentPhase,
-            "search": searchlist
-        };
-
-        if( type === "detail" ){
-            jsonRequest.options = options;
-        }
-
-
-    // Setup the request.  The options parameter is
-    // the object we defined above.
-        function makeTheRequest ( json ){
-            $.ajax({
-                type: 'POST',
-                url: url,
-                dataType: 'json',
-                async: false,
-                data: json,
-                contentType: 'application/json',
-                success: function(data){
-                    if( type === "summary" ){
-                        buildTable(data.values);
-                        fillColList( colList );
-                        buildSelect();
-                    } else {
-                        detailsReport( data, resultStart );
-                    }
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert(xhr.status);
-                    alert(thrownError);
-                }
-            })
-        }
-
-        makeTheRequest( JSON.stringify(jsonRequest) );
-
-    }
-
-
-
-    //"mpi_install_pass",
-    //    "mpi_install_fail",
-    //    "test_build_pass",
-    //    "test_build_fail",
-    //    "test_run_pass",
-    //    "test_run_fail",
-    //    "test_run_skip",
-    //    "test_run_timed"
-    function appendSearch( terms, columnIdx ){
-        var addColumns = [];
-
-
-
-        switch( currentPhase ){
-            case "all":
-                addColumns = [
-                    "mpi_install_pass",
-                    "mpi_install_fail",
-                    "test_build_pass",
-                    "test_build_fail",
-                    "test_run_pass",
-                    "test_run_fail",
-                    "test_run_skip",
-                    "test_run_timed"
-                ];
-                appendTerms();
-
-                switch( columnIdx ){
-                    case 6:
-                        terms[ "mpi_install_pass" ] = 1;
-                        currentPhase = "install";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 7:
-                        terms[ "mpi_install_fail" ] = 1;
-                        currentPhase = "install";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 8:
-                        terms[ "test_build_pass" ] = 1;
-                        currentPhase = "build";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 9:
-                        terms[ "test_build_fail" ] = 1;
-                        currentPhase = "build";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 10:
-                        terms[ "test_run_pass" ] = 1;
-                        currentPhase = "run";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 11:
-                        terms[ "test_run_fail" ] = 1;
-                        currentPhase = "run";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 12:
-                        terms[ "test_run_skip" ] = 1;
-                        currentPhase = "run";
-                        phaseChange( currentPhase, true );
-                        break;
-                    case 13:
-                        terms[ "test_run_timed" ] = 1;
-                        currentPhase = "run";
-                        phaseChange( currentPhase, true );
-                        break;
-                }
-
-                break;
-            case "install":
-                addColumns = [
-                    "mpi_install_pass",
-                    "mpi_install_fail",
-                ];
-                appendTerms();
-
-                switch( columnIdx ){
-                    case 9:
-                        terms[ "mpi_install_pass" ] = 1;
-                        break;
-                    case 10:
-                        terms[ "mpi_install_fail" ] = 1;
-                        break;
-                }
-
-                break;
-            case "build":
-                addColumns = [
-                    "mpi_install_pass",
-                    "mpi_install_fail",
-                ];
-                appendTerms();
-
-                switch( columnIdx ){
-                    case 11:
-                        terms[ "mpi_install_pass" ] = 1;
-                        break;
-                    case 12:
-                        terms[ "mpi_install_fail" ] = 1;
-                        break;
-                }
-
-                break;
-            case "run":
-                addColumns =[
-                    "test_run_pass",
-                    "test_run_fail",
-                    "test_run_skip",
-                    "test_run_timed"
-                ];
-                appendTerms();
-
-                switch( columnIdx ){
-                    case 9:
-                        terms[ "test_run_pass" ] = 1;
-                        break;
-                    case 10:
-                        terms[ "test_run_fail" ] = 1;
-                        break;
-                    case 11:
-                        terms[ "test_run_skip" ] = 1;
-                        break;
-                    case 12:
-                        terms[ "test_run_timed" ] = 1;
-                        break;
-                }
-
-                break;
-            default:
-                break;
-        }
-
-        function appendTerms(){
-            for( var i = 0; i < addColumns.length; i++ ){
-                terms[ addColumns[i] ] = 0;
-            }
-
-        }
-
-
-    }
-
-
-
     /*
      ****************************************************
      Table Configuration
@@ -827,6 +834,7 @@ $(document).ready(function() {
         showStrColList = [];
         var aggregate = false;
         var refresh = false;
+        var column;
 
 
         for (var i = 0; i < colList.length; i++) {
@@ -834,7 +842,7 @@ $(document).ready(function() {
 
             for (var j = 0; j < showColList.length; j++) {
                 if ($(selected).html() === showColList[j]) {
-                    var column = table.column(i);
+                    column = table.column(i);
                     if (column.visible() === false) {
                         refresh = true;
                     }
@@ -844,7 +852,7 @@ $(document).ready(function() {
 
             for (var k = 0; k < hideColList.length; k++) {
                 if ( $(selected).html() === hideColList[k] ) {
-                    var column = table.column(i);
+                    column = table.column(i);
                     if (column.visible() === true) {
                         aggregate = true;
                     }
@@ -1204,6 +1212,7 @@ $(document).ready(function() {
     $( 'button[value=summary]' ).on( 'click', function(){
         summary();
         $('button[value=filter]').removeAttr('disabled');
+        $('#details').hide( "fast" );
     });
 
     //details
@@ -1369,8 +1378,17 @@ $(document).ready(function() {
 
 
     //-------------------Detail HTML-------------------
+
+    //$('#details').hide();
+
+    /**
+     * detailsReport: Populate detailsReports w/ pagination
+     *
+     * @param json - JSON loaded in from makeTheRequest
+     * @param n - number of row to add pre tags (hard coded)
+     */
     function detailsReport( json, n ){
-        var detailsTableTemplate = Handlebars.compile($('#details-table').html());
+        var detailsTableTemplate = Handlebars.compile( $('#details-table').html() );
         $('#details-report').html(detailsTableTemplate(json))
                             .addClass('detailsTable');
 
@@ -1378,8 +1396,66 @@ $(document).ready(function() {
 
         $( tmp ).addClass('highlight')
                 .wrapInner( '<pre></pre>' );
+
+        $('#details').show( "fast" );
     }
 
+    function paginationInit(){
+        var tmp =
+        "<a href='#' class='first' data-action='first'>&laquo;</a>" +
+            "<a href='#' class='previous' data-action='previous'>&lsaquo;</a>" +
+            "<input type='text' readonly='readonly' />" +
+            "<a href='#' class='next' data-action='next'>&rsaquo;</a>" +
+            "<a href='#' class='last' data-action='last'>&raquo;</a>";
+        $('.pagination').append( tmp );
+
+        $('#top').jqPagination({
+            max_page:  40,
+            paged: function(page) {
+                var bot = $('#bottom')
+
+                if ( bot.jqPagination('option', 'current_page') !== page ) {
+                    bot.jqPagination('option', 'current_page', page);
+                }
+            }
+        });
+
+        $('#bottom').jqPagination({
+            max_page:  40,
+            paged: function(page) {
+                var top = $('#top');
+                if ( top.jqPagination('option', 'current_page') !== page ) {
+                    top.jqPagination('option', 'current_page', page);
+                }
+            }
+        });
+    }
+
+    function countInit(){
+        var tmp =
+            "<div id='count'>" +
+                "Show " +
+                    "<select name='count'>" +
+                        "<option value='10'> 10 </option>" +
+                        "<option value='25' selected > 25 </option>" +
+                        "<option value='50'> 50 </option>" +
+                        "<option value='100'> 100 </option>" +
+                    "</select>" +
+                "entries" +
+            "</div>";
+
+        $('.pagination').after(tmp);
+    }
+
+
+    function setMax( num ){
+        $('.pagination').jqPagination('option', 'max_page', num);
+    }
+
+    $('#next').on('click', function(){
+        //console.log( "Setting to: " + $('.pagination').jqPagination( 'option', 'current_page' ) );
+        //setCurrent(45);
+    });
 
     //For number of table with offset of 1
     Handlebars.registerHelper("offset", function(value, options)

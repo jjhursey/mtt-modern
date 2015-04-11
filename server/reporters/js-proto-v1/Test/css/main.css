@@ -222,3 +222,11 @@ table.dataTable tbody td.selected {
   .highlight{
       background-color: lightgreen;
   }
+
+
+  /* pagination */
+
+#count {
+    float:left;
+    margin-top: 10px;
+}

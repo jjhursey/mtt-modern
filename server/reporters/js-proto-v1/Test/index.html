@@ -6,19 +6,13 @@
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
-    <link rel="stylesheet" type="text/css" href="css/dataTables.colReorder.css">
-    <link rel="stylesheet" type="text/css" href="https://datatables.net/release-datatables/extensions/ColVis/css/dataTables.colVis.css">
 
     <!-- jQuery -->
     <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
-    <script src="js/jquery-1.10.2.js"></script>
     <script src="js/1.11.2-jquery-ui.js"></script>
 
     <!-- DataTables -->
-    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.js"></script>
-    <script type="text/javascript" charset="utf8" src="js/dataTables.colReorder.js"></script>
-    <script type="text/javascript" charset="utf8" src="//datatables.net/release-datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
     <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.min.js"></script>
 
     <!-- Handlebars -->
@@ -27,6 +21,10 @@
     <!--Moment-->
     <script type="text/javascript" charset="utf8" src="js/moment.js"></script>
     <script type="text/javascript" charset="utf8" src="js/moment-with-locales.js"></script>
+
+    <!--Pagination-->
+    <script type="text/javascript" charset="utf8" src="js/jquery.jqpagination.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/jqpagination.css">
 
     <link rel="stylesheet" href="css/main.css">
     <link href="css/multi-select.css" media="screen" rel="stylesheet" type="stylesheet">
@@ -173,7 +171,11 @@
                 <tbody></tbody>
             </table>
         </div>
-    <div id="details-report"></div>
+    <div id="details" >
+        <div class="pagination" id="top" ></div>
+        <div id="details-report"></div>
+        <div class="pagination" id="bottom" ></div>
+    </div>
 
 
     <!-- BEGIN Handlebars -->
