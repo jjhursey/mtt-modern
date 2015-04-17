@@ -47,6 +47,9 @@ $mtt_body_html_suffix = rtrim(file_get_contents($www_config_dir."body_suffix.htm
 # Database name
 $mtt_database_name = "mttv3";
 
+# Database hostname
+$mtt_database_host = "localhost";
+
 # Database username
 $mtt_database_username = "mtt";
 

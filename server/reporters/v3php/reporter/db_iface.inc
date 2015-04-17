@@ -133,6 +133,12 @@ function INTERNAL_db_iface_get_summary_columns() {
 }
 
 function INTERNAL_db_iface_is_summary_table_eligible($query) {
+    if( isset( $_GET['use_summary_table'] ) ) {
+        if( $_GET['use_summary_table'] == "off" ) {
+            return false; ## JJH PERF TESTING
+        }
+    }
+
     #
     # Database must have summary tables
     #
