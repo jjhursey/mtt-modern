@@ -214,6 +214,7 @@ table.dataTable tbody td.selected {
   }
 
 
+
   pre {
       white-space: pre-line;
       font-size:10px;
@@ -226,7 +227,17 @@ table.dataTable tbody td.selected {
 
   /* pagination */
 
+.pagination{
+    margin: 10px;
+}
+
 #count {
+    float:left;
+    margin-top: 10px;
+    margin-right: 20px;
+}
+
+#textCount {
     float:left;
     margin-top: 10px;
 }

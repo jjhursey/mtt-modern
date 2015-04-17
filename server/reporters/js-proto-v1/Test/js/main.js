@@ -10,15 +10,23 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //TODO: Implement pagination w/ page preload
-    //TODO: bitness drilldown exception
+    // X Fixed phase change query, test run additional perf column,
+    // X Implement pagination w/ page preload (preload not needed due to very fast response times)
+    //TODO: Fix drilldown when clicked in phase other than 'all' phase
     // X change dropdown options to match POST settings (all switch statements here...)
     // X Change state with start over button ( w/ automatic query )
-    //TODO: save last json request to compare - possibly use cache ( e.g. when hiding datatable )
+    // X save last json request to compare - possibly use cache ( e.g. when hiding datatable )
+    // X Add text "Showing x to y of z results" on details
     //TODO: Fix Show/Hide
     //TODO: Fix CSS
     //TODO: Implement Handlebars (table creation)
-    //TODO: Fix phase change behavior
+    // X Fix phase change behavior ( details report creation ) - removes details and brings user back to summary
+
+    //problems:
+    //  - status code 500
+
+
+    // 1618 -> change phase to test build -> click details button -> count = 5
 
     var ns = {
         currentPhase: "all",
@@ -30,7 +38,6 @@ $(document).ready(function() {
     //Constants
     var ALLLIST = [
         "http_username",
-        //"local_username",
         "platform_name",
         "platform_hardware",
         "os_name",
@@ -39,7 +46,6 @@ $(document).ready(function() {
     ];
     var INSTALLLIST = [
         "http_username",
-        //"local_username",
         "platform_name",
         "platform_hardware",
         "os_name",
@@ -49,9 +55,8 @@ $(document).ready(function() {
         "endian",
         "compiler_name"
     ];
-    var BUILDRUNLIST = [
+    var BUILDLIST = [
         "http_username",
-        //"local_username",
         "platform_name",
         "platform_hardware",
         "os_name",
@@ -61,6 +66,16 @@ $(document).ready(function() {
         "compiler_name",
         "compiler_version",
         "test_suite_name"
+    ];
+    var RUNLIST = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "test_suite_name",
+        "np"
     ];
 
     var AIDETAILLIST = [
@@ -172,12 +187,16 @@ $(document).ready(function() {
     var startMoment;
     var endMoment;
 
+    var lastSumJSON = {};
+    var lastDetJSON = {};
     var lastJSON = {};
     var reqLimit = 25;
 
     var currentPhase = "all";
     var jsonRequest;
     var count;
+    var resultStart = 0;
+    var lastType;
     /*
      ****************************************************
      END VARIABLE DECLARATION
@@ -237,7 +256,6 @@ $(document).ready(function() {
         end.datepicker( 'setDate', tempstart );
     }
 
-    //actual REST interaction
     /**
      * POST REQUEST FUNCTIONS
      */
@@ -246,14 +264,15 @@ $(document).ready(function() {
      * pullValues: create JSON for request, then make request
      *
      * @param type - detail/summary
-     * @param columnIdx -
+     * @param columnIdx - columnIdx clicked on (sent from drilldowns)
+     * @param grabJSON - boolean: true = create JSON request/false = send POST request w/ JSON  (lazy alt to creating createJSON())
      */
-    function pullValues( type, columnIdx ){
-        var resultStart;
+    function pullValues( type, columnIdx, grabJSON ){
         var columnlist ="";
+        lastType = type;
 
         setMoments();
-        var searchlist = getSearchTerms();
+        var searchlist = getSearchTerms( columnIdx );
         var isSum;
 
         type === "summary"? isSum = true : isSum = false ;
@@ -267,33 +286,33 @@ $(document).ready(function() {
             "search": searchlist
         };
 
-        if (!_.isEqual(lastJSON, jsonRequest )) {
-            if (isSum) {
-                    makeTheRequest( type, JSON.stringify(jsonRequest), true );
-            } else {
-                jsonRequest.options = { "count_only": 1 };
-                makeTheRequest( type, JSON.stringify(jsonRequest), false, true); //grab count of results
-            }
+        if( grabJSON ){ return; }
+
+        if( isSum ) {
+            makeTheRequest(type, jsonRequest, true);
+        } else {
+            jsonRequest.options = { "count_only": 1 };
+            makeTheRequest(type, jsonRequest, false, true); //grab count of results
         }
-
-
-        // Setup the request.  The options parameter is
-        // the object we defined above.
 
         function grabColumns() {
             if ( isSum ) {
                 switch (currentPhase) {
                     case "all":
                         columnlist = ALLLIST;
+                        resultStart = 19;
                         break;
                     case "install":
                         columnlist = INSTALLLIST;
+                        resultStart = 19;
                         break;
                     case "test_build":
-                        columnlist = BUILDRUNLIST;
+                        columnlist = BUILDLIST;
+                        resultStart = 17;
                         break;
                     case "test_run":
-                        columnlist = BUILDRUNLIST;
+                        columnlist = RUNLIST;
+                        resultStart = 21;
                         break;
                     default:
                         break;
@@ -322,6 +341,23 @@ $(document).ready(function() {
 
             }
         }
+    }
+
+    function getSearchTerms( columnIdx ) {
+        var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
+        var terms = {};
+
+        for (var i = SEARCH_FIELDS.length; i--;) {
+            checkSearchTerm(terms, SEARCH_FIELDS[i]);
+        }
+
+        terms.start_timestamp = startMoment;
+        terms.end_timestamp = endMoment;
+
+        //grab nums if clicked on for drill-down
+        if( columnIdx ){
+            appendSearch( terms, columnIdx );
+        }
 
         function checkSearchTerm(terms, name) {
             var val = $('input[name=' + name + ']').val();
@@ -329,26 +365,6 @@ $(document).ready(function() {
                 terms[name] = val;
             }
         }
-
-        function getSearchTerms() {
-            var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
-            var terms = {};
-
-            for (var i = SEARCH_FIELDS.length; i--;) {
-                checkSearchTerm(terms, SEARCH_FIELDS[i]);
-            }
-
-            terms.start_timestamp = startMoment;
-            terms.end_timestamp = endMoment;
-
-            //grab nums if clicked on for drill-down
-            if( columnIdx ){
-                appendSearch( terms, columnIdx );
-            }
-
-            return terms;
-        }
-
 
         /**
          * appendSearch:
@@ -412,6 +428,7 @@ $(document).ready(function() {
                             currentPhase = "test_run";
                             phaseChange( currentPhase, true );
                             break;
+                        default: break;
                     }
 
                     break;
@@ -475,7 +492,12 @@ $(document).ready(function() {
                     break;
             }
         }
+
+        return terms;
     }
+
+
+
 
     /**
      * makeTheRequest: POST JSON request
@@ -486,24 +508,43 @@ $(document).ready(function() {
      * @param type - 'summary'/'detail' - postfix to url for request type
      */
     function makeTheRequest ( type, json, isSum, check ){
-        lastJSON = json;
         var url = "http://138.49.30.31:9090/" + type;
+        lastJSON = json;
+
+        //compare objects with Lo-Dash to prevent requesting same data twice in a row
+        if( type === "summary") {
+            if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases)) {
+                console.log("ABORT THE SUMMARY QUERY!!!!");
+                return;
+            }
+            lastSumJSON = json;
+            console.log( "lastSumJSON written to" );
+        } else if ( type === "detail" && json.options['count_only'] === 1) {
+            if( _.isEqual( lastDetJSON.search, json.search ) && _.isEqual( lastDetJSON.phases, json.phases )  ){
+                setMax( Math.ceil(count/reqLimit) ); //details - start over - same details (w/o this pagination will work, but no text will be displayed until interaction)
+                console.log("ABORT THE DETAILS QUERY!!!!");
+                return;
+            }
+            lastDetJSON = json;
+            console.log( "lastDetJSON written to!" );
+        }
+
         $.ajax({
             type: 'POST',
             url: url,
             dataType: 'json',
-            data: json,
+            data: JSON.stringify(json),
             contentType: 'application/json',
             success: function(data){
-                if( isSum ){
+                if (isSum) {
                     buildTable( data.values );
                     //fillColList( colList );
                     //buildSelect();
                 } else {
-                    if( check ){
-                        count = Math.ceil( data.values[0][0] /reqLimit);
-                        setMax( count );
-                        throttleReturn(0);
+                    if (check) {
+                        count = data.values[0][0];
+                        setMax( Math.ceil(data.values[0][0] / reqLimit) );
+                        throttleReturn(1);
                     } else {
                         detailsReport( data, resultStart );
                     }
@@ -523,12 +564,14 @@ $(document).ready(function() {
      * @param page - Page number requested
      */
     function throttleReturn( page ){
+        var offset = (page - 1) * reqLimit;
+
         jsonRequest.options = {
             "limit": reqLimit,
-            "offset": ( page - 1 ) * reqLimit
+            "offset": offset
         };
 
-        makeTheRequest( 'detail', JSON.stringify(jsonRequest), false, false ); //grab first batch of results
+        makeTheRequest( 'detail', jsonRequest, false, false ); //grab first batch of results
     }
 
 
@@ -552,15 +595,15 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    //special case if num col clicked
-    function phaseChange( phase ){
+    function phaseChange( phase, isDrilldown ){
         currentPhase = phase;
         $( "select[name=phases]" ).val(currentPhase);
 
         removeTables();
         addTables( phase );
         changeHeaders( phase );
-        toggleDetailsBTN( phase );
+        updateSummary( isDrilldown );
+        updateDetails( phase );
     }
 
     function removeTables(){
@@ -582,14 +625,12 @@ $(document).ready(function() {
             case "install":
                 newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
 
-
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_build":
                 newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
-
 
                 sqlTable = buildSqlTableString( newColumns, sqlTable );
                 sqlCol.append( sqlTable );
@@ -620,8 +661,7 @@ $(document).ready(function() {
         return table;
     }
 
-    function changeHeaders( phase ){
-
+    function changeHeaders( phase, specialCase ){
         var header;
         var tempTable = $( '#example' );
         tempTable.empty();
@@ -663,7 +703,6 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -689,7 +728,6 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -714,7 +752,6 @@ $(document).ready(function() {
                     "<thead>" +
                     "<tr id='headers' >" +
                         "<th rowspan='2'>Org</th>" +
-                        //"<th rowspan='2'>Local Username</th>" +
                         "<th rowspan='2'>Platform name</th>" +
                         "<th rowspan='2'>Hardware</th>" +
                         "<th rowspan='2'>OS</th>" +
@@ -730,7 +767,7 @@ $(document).ready(function() {
                         "<th>Fail</th>" +
                         "<th>Skip</th>" +
                         "<th>Timed</th>" +
-                        "<th>Perf</th>" +
+                        //"<th>Perf</th>" +
                     "</tr>" +
                     "</thead>";
 
@@ -741,18 +778,38 @@ $(document).ready(function() {
 
         }
 
-
+        if( !specialCase ){
+        }
         table.destroy();
         tempTable.empty();
         tempTable.append( header );
     }
 
-    function toggleDetailsBTN( phase ){
+    function updateSummary( isDrilldown ){
+        if( !isDrilldown ){
+            pullValues( 'summary', 0, false );
+        }
+    }
+
+    function updateDetails( phase ){
         if( phase === 'install' || phase === 'test_build' || phase === 'test_run' ){
+            // toggle button
             $( 'button[value=details]' ).removeAttr('disabled');
+
+            //update details table if visible
+            if ( $('#details').is(':visible') ) {
+                $( '#details' ).hide()
+                               .empty();
+
+                $( '#table' ).show();
+                //pullValues( 'detail', 0, false  );
+            }
+
         } else {
             $( 'button[value=details]' ).prop('disabled', 'disabled');
         }
+
+
     }
 
     /*
@@ -1048,9 +1105,6 @@ $(document).ready(function() {
         endMoment = endMoment.format( REQUESTFORMAT );
     }
 
-
-
-
     /*
      ****************************************************
      Event Listeners
@@ -1103,7 +1157,7 @@ $(document).ready(function() {
 
             parseRow( table.row( row ).data() );          // gather string data
             if( data !== 0 ){
-                pullValues( "summary", colidx );          // gather num data with appendSearch()
+                pullValues('summary', colidx, false);         // gather num data with appendSearch()
                 $( 'button[value=details]' ).removeAttr('disabled');
             }
         }
@@ -1130,8 +1184,10 @@ $(document).ready(function() {
                 columnlist = INSTALLLIST;
                 break;
             case "test_build":
+                columnlist = BUILDLIST;
+                break;
             case "test_run":
-                columnlist = BUILDRUNLIST;
+                columnlist = RUNLIST;
                 break;
         }
 
@@ -1147,18 +1203,12 @@ $(document).ready(function() {
         if ( $(this).hasClass('selected') ) { $(this).removeClass('selected'); }
     });
 
-
-
-
-
-
-
-
     //------------------UI SELECTION LISTENERS------------------
 
     //Phase Selection
     $( "select[name=phases]" ).on( 'change', function(){
             phaseChange( $( "select[name=phases] option:selected").attr('value') );
+            //pullValues( lastType, 0, false );
     });
 
     //Window Selection
@@ -1219,7 +1269,6 @@ $(document).ready(function() {
     function summary(){
         $( '#table' ).show();
         $( '#details' ).hide();
-        $( '#details-report' ).hide();
 
         $( 'button[value=filter]' ).removeAttr('disabled');
 
@@ -1228,7 +1277,11 @@ $(document).ready(function() {
     }
 
     $( 'button[value=summary]' ).on( 'click', function(){
-        table.destroy();
+        pullValues( 'summary', 0, true );
+        if( !_.isEqual( lastSumJSON, jsonRequest ) ){
+             table.destroy();
+        }
+
         summary();
     });
 
@@ -1236,7 +1289,7 @@ $(document).ready(function() {
     //details
     $( document ).on( 'click', 'button[value=details]', function() {
         $( '#table' ).hide();
-        $( '#details-report' ).show();
+        $( '#details' ).show();
         $( 'button[value=filter]' ).prop( 'disabled', 'disabled' );
 
         currentPhase = $( "select[name=phases] option:selected").attr('value');
@@ -1338,7 +1391,6 @@ $(document).ready(function() {
                 for( var i = 0; i < 7; i++ ){
                     var selector = '.column_filter :eq(' + i + ')';
                     $( selector  )
-                        //.eq( i )
                         .parents('tr')
                         .attr( 'data-column', i );
                 }
@@ -1371,13 +1423,6 @@ $(document).ready(function() {
 
     //filter fields
     $( document ).on( 'keyup click focus', 'input.column_filter', function() {
-        //if( $( '.extend' ).first()
-        //                  .
-        //){
-        //
-        //}
-
-
         if ( !state ) {
             filterColumn( $(this).parents('tr').attr('data-column') );
         }
@@ -1406,7 +1451,8 @@ $(document).ready(function() {
      */
     function detailsReport( json, n ){
         var detailsTableTemplate = Handlebars.compile( $('#details-table').html() );
-        $('#details-report').html(detailsTableTemplate(json))
+        $('#details-report').empty()
+                            .html(detailsTableTemplate(json))
                             .addClass('detailsTable');
 
         var tmp = '.detailsTable table tr:nth-child(n+' + n + '):nth-child(-n+' + (n+1) + ') td';
@@ -1415,6 +1461,26 @@ $(document).ready(function() {
                 .wrapInner( '<pre></pre>' );
 
         $('#details').show( "fast" );
+
+        if( lastJSON.options.offset == 0 ){
+            $('#textCount').empty();
+            tmp =
+                "<div id='textCount'>" +
+                    "Showing " + 1 + " to " + $('#count option:selected').val() + " out of " + count + " entries." +
+                "</div>";
+
+            $('#count').after(tmp);
+        }
+
+
+        if( count == 0 ){
+            tmp =
+                "No results found...";
+
+            $('#details').append( tmp );
+        }
+
+
     }
 
     function paginationInit(){
@@ -1427,14 +1493,12 @@ $(document).ready(function() {
         $('.pagination').append( tmp );
 
         $('#top').jqPagination({
-            max_page:  40,
             paged: function(page) {
                 syncPagination( $('#bottom'), page );
             }
         });
 
         $('#bottom').jqPagination({
-            max_page:  40,
             paged: function(page) {
                 syncPagination( $('#top'), page );
             }
@@ -1443,6 +1507,8 @@ $(document).ready(function() {
         function syncPagination( id, page ){
             if( id.jqPagination( 'option', 'current_page' ) !== page ){
                 id.jqPagination( 'option', 'current_page', page );
+                throttleReturn( $('.pagination').jqPagination('option', 'current_page') );
+                setTextRange();
             }
         }
 
@@ -1468,12 +1534,35 @@ $(document).ready(function() {
         $('.pagination').jqPagination('option', 'max_page', num);
     }
 
-    $('#next').on('click', function(){
-        throttleReturn( $('.pagination').jqPagination('option', 'current_page') );
+    function setTextRange(){
+        $('#textCount').empty();
+
+        var tmp;
+        var low  = lastJSON.options.offset + 1;
+        var high = (low - 1) + parseInt($('#count option:selected').val());
+
+        if ( high > count ) {
+            tmp = "Showing " + low + " to " + count + " out of " + count + " entries.";
+        } else {
+            tmp = "Showing " + low + " to " + high + " out of " + count + " entries.";
+        }
+
+        $('#textCount').append( tmp );
+    }
+
+    $('select[name=count]').on('change', function(){
+        var p = $('.pagination');
+        reqLimit = $( "select[name=count] option:selected").attr('value');
+
+        p.jqPagination( 'option', 'current_page', 1 );
+        setMax( Math.ceil(count/reqLimit) );
+        setTextRange();
+
+        throttleReturn( p.jqPagination('option', 'current_page') );
     });
 
     //For number of table with offset of 1
     Handlebars.registerHelper("offset", function(value, options) {
-        return parseInt(value) + 1;
+        return (parseInt(value + 1) + (lastJSON.options.offset));
     });
 });
