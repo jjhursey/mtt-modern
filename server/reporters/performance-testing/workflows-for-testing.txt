@@ -1,11 +1,18 @@
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 General information
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-Flux version of the MTT V3 Reporter:
-  http://flux.cs.uwlax.edu/mtt/reporters/v3php/index.php
-
 Most Recent timestamp in the database:
   2015-04-11 12:31:42
+
+
+Flux version of the MTT V3 Reporter:
+  http://flux.cs.uwlax.edu/mtt/reporters/v3php/index.php
+  - Preferences -> Use Summary Table (when able)
+     - Test with that checked and unchecked
+  - You should be able to automate the time gathering for the v3 reporter by copying the URL
+    at each step through the process. The URL encodes all of the query information. You can
+    then write a script to load that url and extract the time values reported at the bottom
+    of the page.
 
 
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
@@ -14,20 +21,33 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 For all workflows we need to go through the workflow with the following options
  Note: If there are multiple pages of results we want to know the:
        - Cost of displaying the first page
-       - Cost of navigating to each page in order
        - Total cost of navigating through the whole set of pages
 
- - Time ranges:
+ - Time ranges to test each workflow
     - Past 24 hours
       [Simulated as: 2015-04-09 00:00:00 - 2015-04-10 00:00:00
     - Past 48 hours
       [Simulated as: 2015-04-08 00:00:00 - 2015-04-10 00:00:00
     - Past 1 week:
       [Simulated as: 2015-04-03 00:00:00 - 2015-04-10 00:00:00
-    - Past month:
+    - Past 1 month:
       [Simulated as: 2015-03-10 00:00:00 - 2015-04-10 00:00:00
- - Preferences -> Use Summary Table (when able)
-    - Test with that checked and unchecked
+
+ - 4 Versions of the MTT Reporter to test
+   - V3 with Summary tables
+   - V3 without Summary tables
+   - JavaScript with caching
+   - JavaScript without caching
+
+Total variations:
+ 16 = 4 time ranges x 4 MTT versions
+ 16 = Workflow 1: 5 common steps + 3 for alt1 + 4 for alt2 + 4 for alt3
+ 11 = Workflow 1: 2 common steps + 3 for alt1 + 3 for alt2 + 3 for alt3
+ Total runs = 16 x 16 + 16 x 11 = 432 timing results
+
+For each timing result record:
+ - Server time (time spent waiting for data from server + transmission time)
+ - Render time (everything else)
 
 
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
@@ -96,7 +116,7 @@ Alternative Path 1: MPI Install
  3) Click on a specific failure
     This will switch to the MPI Install view automatically
  4) Click on a specific Compiler
- 4) Click on Detail
+ 5) Click on Detail
 
 
 Alternative Path 2: Test Build
