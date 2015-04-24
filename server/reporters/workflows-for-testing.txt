@@ -85,7 +85,7 @@ Alternative Path 3: Test Run
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 Workflow 2
 mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-Developer investigating a specific test failure
+Developer investigating a specific test failure for their organization
 -----------------------------------------------------
  1) Summary Button
  2) Click on a specific "Org" (Drill down)
