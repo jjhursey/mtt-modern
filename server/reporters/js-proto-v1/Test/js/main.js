@@ -1123,8 +1123,6 @@ $(document).ready(function() {
     $( document ).on( 'click', tabletr, function () {
         table.$('tr.selected').removeClass('selected');
         $(this).addClass('selected');
-        //alert( table.row(this).data() );
-
     } );
     $( document ).on( 'dblclick', tabletr, function () {
         if ( $(this).hasClass('selected') ) {
@@ -1138,7 +1136,8 @@ $(document).ready(function() {
         table.$('td.selected').removeClass('selected');
         $(this).addClass('selected');
 
-        var field = $('.column_filter').eq( $(this).index() );
+        //var field = $('.column_filter').eq( $(this).index() );
+        var field = $('.sqltextfields').find("input").eq( $(this).index() );
         var data = table.cell(this).data();
         var row;
         var colidx;
@@ -1474,9 +1473,7 @@ $(document).ready(function() {
 
 
         if( count == 0 ){
-            tmp =
-                "No results found...";
-
+            tmp = "No results found...";
             $('#details').append( tmp );
         }
 
@@ -1565,4 +1562,16 @@ $(document).ready(function() {
     Handlebars.registerHelper("offset", function(value, options) {
         return (parseInt(value + 1) + (lastJSON.options.offset));
     });
+
+
+    // Performance Buttons
+
+
+
+
+
+
+
+
+
 });
