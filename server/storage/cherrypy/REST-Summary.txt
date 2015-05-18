@@ -1,0 +1,112 @@
+The following web address:
+  http://138.49.196.178:9090/
+
+There are two REST interfaces:
+  /fields
+  /summary
+
+Available date range:
+ 2011-01-01 to 2014-10-29 09:47:02
+
+
+/fields
+----------------------------------
+Using a GET on that URL
+  http://138.49.196.178:9090/fields
+Will return the fields and translations of the valid search parameters
+
+
+/summary
+----------------------------------
+Using a POST on that URL:
+  http://138.49.196.178:9090/summary
+You can POST a JSON structured search. Below is an example:
+#--------------------
+{
+    "columns": [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "compiler_name"
+    ],
+    "phases": [
+        "all"
+    ],
+    "search": {
+        "compiler_name": "gnu",
+        "end_timestamp": "2014-10-15 22:00:00",
+        "http_username": "nvidia",
+        "mpi_name": "ompi-v1.8",
+        "start_timestamp": "2014-10-15 02:00:00"
+    }
+}
+#--------------------
+The "columns" field is an ordered array of fields that you would like returned.
+
+The "phases" field is an array of phases to include in the summary. The valid values are "all", "install", "test_build", "test_run". By default you probably want to use "all".
+
+The "search" field is an unordered list of search parameters. The key is the 'field' and the value is the search parameter. The end_timestamp and start_timestamp are required. They must be in the form YYYY-MM-DD HH-MM-SS.
+
+The server will return JSON data with the results. If the "status" is 0 then this was a successful search. The "fields" array will give you the fields columns available. The "values" 2D array will return all of the rows of the table.
+
+#--------------------
+{
+    "fields": [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "mpi_install.compiler_name",
+        "mpi_install_pass",
+        "mpi_install_fail",
+        "test_build_pass",
+        "test_build_fail",
+        "test_run_pass",
+        "test_run_fail",
+        "test_run_skip",
+        "test_run_timed"
+    ],
+    "status": 0,
+    "status_msg": "Success",
+    "timing": "0:00:00.174681",
+    "values": [
+        [
+            "nvidia",
+            "ivy cluster",
+            "x86_64",
+            "Linux",
+            "ompi-v1.8",
+            "v1.8.3-37-g9208601",
+            "gnu",
+            1,
+            0,
+            5,
+            0,
+            1632,
+            3,
+            108,
+            9
+        ]
+    ]
+}
+#--------------------
+
+
+If the "status" is negative then this was a failed search. The "status_msg" will indicate the error message
+
+#--------------------
+{
+    "fields": null,
+    "status": -4,
+    "status_msg": "Validate Error: Invalid 'column' parameter 'compil'.",
+    "timing": "0:00:00.174681",
+    "values": null
+}
+#--------------------
+
+

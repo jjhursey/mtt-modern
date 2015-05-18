@@ -2221,7 +2221,13 @@ function basic_info($date_fields, $phases, $num_rows, $fast) {
     if( $fast ) {
         $ret .= "&nbsp;&nbsp;<i>(Via Summary)</i>";
     } else {
-        $ret .= "&nbsp;&nbsp;<i>(Via Direct Access)</i>";
+        $summary_extra = "";
+        if( isset( $_GET['use_summary_table'] ) ) {
+            if( $_GET['use_summary_table'] == "off" ) {
+                $summary_extra = " [Summary Disabled]";
+            }
+        }
+        $ret .= "&nbsp;&nbsp;<i>(Via Direct Access".$summary_extra.")</i>";
     }
 
     if ($_GET["test_result"]) {
@@ -2920,7 +2926,6 @@ function process_cookie(&$params, &$cookie) {
 
     foreach (array_keys($defaults) as $category) {
         foreach (array_keys($defaults[$category]) as $p) {
-
             # Their browser has cookies disabled, or
             # they've been sent a link - use _GET
             if ($params[$p] != "") {
@@ -2937,10 +2942,12 @@ function process_cookie(&$params, &$cookie) {
             # Use the cookie
             } elseif ($cookie["mtt_$p"] and ! $no_cookies) {
                 define(strtoupper($p), param2constant($cookie["mtt_$p"]));
+                $params[$p] = $cookie["mtt_$p"] ;
 
             # None of the above, use the defaults
             } else {
                 define(strtoupper($p), param2constant(prefs_default($p)));
+                $params[$p] = prefs_default($p);
             }
         }
     }

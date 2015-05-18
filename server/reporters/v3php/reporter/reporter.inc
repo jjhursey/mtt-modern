@@ -224,6 +224,7 @@ function setup_prefs() {
                 'wrap'              => array(100),
                 'trial'             => array(false),
                 'enable_drilldowns' => array(true),
+                'use_summary_table' => array(true),
             ),
             'graphing' => array(
                 'yaxis_scale'      => array(array('Logarithmic', '*Linear')),
@@ -511,6 +512,7 @@ function label($str) {
             'trial'                => 'Trial',
             'Trial'                => 'Show trial runs',
             'enable_drilldowns'    => 'Enable drilldown links',
+            'use_summary_table'    => 'Use Summary Table (when able)',
 
             # Graphing preferences
             'graphing'             => 'Graphing',

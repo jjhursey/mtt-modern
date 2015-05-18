@@ -1,0 +1,137 @@
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+General information
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Most Recent timestamp in the database:
+  2015-04-11 12:31:42
+
+
+Flux version of the MTT V3 Reporter:
+  http://flux.cs.uwlax.edu/mtt/reporters/v3php/index.php
+  - Preferences -> Use Summary Table (when able)
+     - Test with that checked and unchecked
+  - You should be able to automate the time gathering for the v3 reporter by copying the URL
+    at each step through the process. The URL encodes all of the query information. You can
+    then write a script to load that url and extract the time values reported at the bottom
+    of the page.
+
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Variations of workflows
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+For all workflows we need to go through the workflow with the following options
+ Note: If there are multiple pages of results we want to know the:
+       - Cost of displaying the first page
+       - Total cost of navigating through the whole set of pages
+
+ - Time ranges to test each workflow
+    - Past 24 hours
+      [Simulated as: 2015-04-09 00:00:00 - 2015-04-10 00:00:00
+    - Past 48 hours
+      [Simulated as: 2015-04-08 00:00:00 - 2015-04-10 00:00:00
+    - Past 1 week:
+      [Simulated as: 2015-04-03 00:00:00 - 2015-04-10 00:00:00
+    - Past 1 month:
+      [Simulated as: 2015-03-10 00:00:00 - 2015-04-10 00:00:00
+
+ - 4 Versions of the MTT Reporter to test
+   - V3 with Summary tables
+   - V3 without Summary tables
+   - JavaScript with caching
+   - JavaScript without caching
+
+Total variations:
+ 16 = 4 time ranges x 4 MTT versions
+ 16 = Workflow 1: 5 common steps + 3 for alt1 + 4 for alt2 + 4 for alt3
+ 11 = Workflow 1: 2 common steps + 3 for alt1 + 3 for alt2 + 3 for alt3
+ Total runs = 16 x 16 + 16 x 11 = 432 timing results
+
+For each timing result record:
+ - Server time (time spent waiting for data from server + transmission time)
+ - Render time (everything else)
+
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Notes on search parameters
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ - For Org.
+   "cisco" is a good choice, then run lots of tests
+ - For MPI Name
+   "ompi-nightly-master" is a good choice, it is the most frequently tested
+ - For MPI Version
+   "dev-NNN-..." where NNNN is the largest number, that is the latest build
+ - For compiler
+   "gnu" is the most popular choice
+
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Workflow 1
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Developers Looking for the State of Health for a project across all institutions
+-----------------------------------------------------
+ 1) Summary Button
+ 2) Sort by MPI Name then by MPI Version
+    [Broken in the MTT Reporter, but time anyway]
+ 3) Click on a specific MPI Name (Drill Down)
+    Say "ompi-nightly-master"
+ 4) Sort by MPI Version
+    [Broken in the MTT Reporter, but time anyway]
+ 5) Click on a specific MPI Version (Drill Down)
+    Say "dev-NNNN-" where NNNN is the largest number in the list
+
+Alternative Path 1: MPI Install
+-------------------
+ 6) Switch to the MPI Install Phase view
+ 7) Click on a failing result (# of results > 1, but less than 10)
+    [If not failing results then just select one of the passes]
+ 8) Click on Detail and scroll through all results
+
+Alternative Path 2: Test Build
+-------------------
+ 6) Switch to the Test Build Phase view
+ 7) Click on a test suite
+ 8) Click on a failing result (# of results > 1, but less than 10)
+    [If not failing results then just select one of the passes]
+ 9) Click on Detail and scroll through all results
+
+Alternative Path 3: Test Run
+-------------------
+ 6) Switch to the Test Run Phase view
+ 7) Click on a test suite
+ 8) Click on a failing result (# of results > 1, but less than about 50)
+    [If not failing results then just select one of the timed, or passes]
+ 9) Click on Detail and scroll through all results
+
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Workflow 2
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+Developer investigating a specific test failure for their organization
+-----------------------------------------------------
+ 1) Summary Button
+ 2) Click on a specific "Org" (Drill down)
+
+
+Alternative Path 1: MPI Install
+-------------------
+ 3) Click on a specific failure
+    This will switch to the MPI Install view automatically
+ 4) Click on a specific Compiler
+ 5) Click on Detail
+
+
+Alternative Path 2: Test Build
+-------------------
+ 3) Click on a specific failure (or success if no failures)
+    This will switch to the Test Build view automatically
+ 4) Click on the specific failure number for a single Suite
+ 5) Click on Detail
+
+
+Alternative Path 3: Test Run
+-------------------
+ 3) Click on a specific failure (or success if no failures)
+    This will switch to the Test Run view automatically
+ 4) Click on the specific failure number for a single Suite
+ 5) Click on Detail
+
+

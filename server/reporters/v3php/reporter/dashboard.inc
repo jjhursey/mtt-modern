@@ -1032,7 +1032,7 @@ function form_popup($elements, $params, $specs) {
                     $arr["$type$field"] = $entries;
 
                     # Fill-in field for default or last selection
-		    $value = auto_fill($entries, $params["$type$field"], "");
+                    $value = auto_fill($entries, $params["$type$field"], "");
                 }
                 else {
                     $arr[$field] = $entries;
@@ -1043,8 +1043,9 @@ function form_popup($elements, $params, $specs) {
 
                 $menu .= sprintf($td2, $td_colspan);
 
-                if (is_bool($entries))
+                if (is_bool($entries)) {
                     $menu .= "\n<input type='checkbox' name='$field' value='on' $value>";
+                }
 
                 elseif (is_scalar($entries))
                     $menu .= "\n<input type='text' name='$text_$field' value='" . addslashes($value) . "'>";
@@ -1120,7 +1121,13 @@ function auto_fill($entries, $lastval, $cookieval) {
     if (is_bool($entries)) {
         if ($cookieval == 'on')
             $ret = 'checked';
+        elseif ($cookieval == 'off')
+            $ret = null;
         elseif ($lastval == 'on')
+            $ret = 'checked';
+        elseif ($lastval == 'off')
+            $ret = null;
+        elseif( $entries == true ) 
             $ret = 'checked';
         else
             $ret = null;
