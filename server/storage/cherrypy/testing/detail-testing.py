@@ -159,6 +159,7 @@ def post_complex_detail(phase="install"):
     payload['columns'].append('mpi_name')
     payload['columns'].append('mpi_version')
     payload['columns'].append('compiler_name')
+    payload['columns'].append('configure_arguments')
 
     ###############################
     # What are the search parameters
@@ -178,7 +179,8 @@ def post_complex_detail(phase="install"):
     payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
 
     # Org
-    payload['search']['http_username'] = 'nvidia'
+    #payload['search']['http_username'] = 'nvidia'
+    payload['search']['http_username'] = 'cisco'
 
     # Platform information
     #    Name
@@ -197,7 +199,7 @@ def post_complex_detail(phase="install"):
     #payload['search']['mpi_version'] = 'v1.8.3-37-g9208601'
 
     # MPI Name
-    payload['search']['mpi_name'] = 'ompi-v1.8'
+    #payload['search']['mpi_name'] = 'ompi-v1.8'
 
 
     url = base_url + "/detail"
@@ -218,8 +220,8 @@ def post_complex_detail(phase="install"):
 ################################################################
 #get_fields()
 #post_detail()
-post_detail_options()
-#post_complex_detail("install")
+#post_detail_options()
+post_complex_detail("install")
 #post_complex_detail("test_build")
 #post_complex_detail("test_run")
 #post_complex_detail("all")

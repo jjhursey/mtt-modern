@@ -58,20 +58,28 @@ def post_summary():
     payload = {}
 
     payload['phases'] = []
-    payload['phases'].append( 'install' )
+    #payload['phases'].append( 'install' )
     #payload['phases'].append( 'test_build' )
-    #payload['phases'].append( 'test_run' )
+    payload['phases'].append( 'test_run' )
     #payload['phases'].append( 'all' )
 
     payload['columns'] = []
+    payload['columns'].append( 'http_username' )
+    payload['columns'].append( 'platform_name' )
+    payload['columns'].append( 'platform_hardware' )
+    payload['columns'].append( 'os_name' )
     payload['columns'].append( 'mpi_name' )
+    payload['columns'].append( 'mpi_version' )
+    payload['columns'].append( 'bitness' )
     #payload['columns'].append( 'endian' )
     #payload['columns'].append( 'bitness' )
     #payload['columns'].append( 'vpath_mode' )
     #payload['columns'].append( 'duration' )
     #payload['columns'].append( 'test_suite_name' )
-    #payload['columns'].append( 'compiler_name' )
-
+    payload['columns'].append( 'compiler_name' )
+    payload['columns'].append( 'compiler_version' )
+    payload['columns'].append( 'test_suite_name' )
+    
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
     payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
@@ -95,6 +103,7 @@ def post_summary():
     print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
     result = r.json()
     print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+    print json.dumps(payload, sort_keys=True, indent=4, separators=(',',': '))
     
     if result["values"] != None:
         print "Length: " + str( len(result["values"]) )
@@ -254,7 +263,7 @@ def post_complex_summary(phase="install"):
 #get_fields()
 #get_summary()
 #post_summary()
-post_summary_options()
+#post_summary_options()
 #post_complex_summary("install")
 #post_complex_summary("test_build")
 #post_complex_summary("test_run")
