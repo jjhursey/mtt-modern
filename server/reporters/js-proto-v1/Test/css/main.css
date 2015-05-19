@@ -5,6 +5,7 @@
     width: auto;
     font-size: 14px;
     background-color: orange;
+    position: static;
 }
 
 #leftcolumn {
@@ -13,6 +14,7 @@
     width: 450px;
     border: 1px solid black;
     background-color: lightgreen;
+    position: static;
 }
 
 #center {
@@ -20,6 +22,7 @@
     float:left;
     /*border: 1px solid black;*/
     background-color: lightseagreen;
+    position: static;
 }
 
 #rightcolumn {
@@ -27,17 +30,20 @@
     text-align: center;
     margin: 5px;
     background-color: lightblue;
+    position: static;
 }
 
 #phases {
     /*margin: 5px;*/
     border-bottom: 1px solid black;
+    position: static;
 }
 
 #search {
     width: auto;
     margin: auto;
     padding: 5px;
+    position: static;
 }
 
 #search table {
@@ -55,10 +61,12 @@
     text-align: center;
     border: 1px solid black;
     background-color: lightcoral;
+    position: static;
 }
 
 .primary {
     height: 30px;
+    position: static;
 }
 
 .primary:hover {
@@ -68,6 +76,7 @@
 
 .secondary {
     height: 20px;
+    position: static;
 }
 
 .secondary:hover {
@@ -79,6 +88,7 @@
     text-align: center;
     color: #ffffff;
     background: black;
+    position: static;
 }
 
 /*Drilldown*/
@@ -91,11 +101,13 @@ table.dataTable tbody td.selected {
 /* new design */
 
 #topbar {
+    font-family: Arial;
     text-align: right;
+    position: static;
 }
 
 .extend {
-    width: auto;
+    min-width: 1400px;
     height:200px;
     padding: 10px;
 
@@ -108,11 +120,13 @@ table.dataTable tbody td.selected {
     box-shadow: inset -10px -10px 50px -17px rgba(0,0,0,0.75);
 
     font-family: Arial;
+    position: static;
 }
 
 .col1, .col2, .col3, .col4 {
     float:left;
     margin-right: 5px;
+    position: static;
 }
 
 .col1 {
@@ -136,14 +150,17 @@ table.dataTable tbody td.selected {
     margin: auto;
     overflow: auto;
     clear: both;
+    position: static;
 }
 
 #sqlbox{
     background-color: lightcoral;
+    position: static;
 }
 
     .sqltextfields input {
         width: 200px;
+        position: static;
     }
 
     .blankrow { height: 25px !important; }
@@ -157,6 +174,7 @@ table.dataTable tbody td.selected {
     #startdate , #enddate {
         text-align: center;
         width: 65px;
+        position: static;
     }
 
     #reldate {
@@ -169,10 +187,12 @@ table.dataTable tbody td.selected {
         width: 25%;
         text-align: center;
         float: left;
+        position: static;
     }
 
     #sqltoolbar1{
-        width: 50%;
+        width: 48%;
+        position: static;
     }
 
 
@@ -182,6 +202,7 @@ table.dataTable tbody td.selected {
     background-color: lightskyblue;
     margin-left:10px;
     z-index: 100;
+    position: static;
 }
 
 .ms-list {

@@ -582,11 +582,11 @@ $(document).ready(function() {
      */
 
     function filterColumn ( i ) {
-        //$('#example').DataTable().column( i ).search(
-        //    $( '.column_filter' ).eq( i ).val(),
-        //    true,
-        //    false
-        //).draw();
+        $('#example').DataTable().column( i ).search(
+            $( '.column_filter' ).eq( i ).val(),
+            true,
+            false
+        ).draw();
     }
 
     /*
@@ -1305,7 +1305,9 @@ $(document).ready(function() {
         start.datepicker( 'setDate', '-1d' );
         end.datepicker( 'setDate', new Date() );
 
-        phaseChange( "all", true );
+        if( currentPhase !== "all" ){
+            phaseChange( "all", true );
+        }
         summary();
     });
 
@@ -1352,6 +1354,8 @@ $(document).ready(function() {
                 startdate.prop('disabled', false);
                 enddate.prop('disabled', false);
                 extra.prop('disabled', true);
+                $('button[value=details]').prop('disabled', true);
+                $('button[value=perf]').prop('disabled', true);
             }
         }
 
