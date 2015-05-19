@@ -265,6 +265,15 @@ def build_summary_sql(session=[], data=[]):
             qualify = "mpi_install."
         where += "\n\t AND "+qualify+"compiler_name = '"+searching['compiler_name']+"'"
         del searching["compiler_name"]
+    if "compiler_version" in searching:
+        if 'install' in data['phases']:
+            qualify = "mpi_install."
+        elif 'test_build' in data['phases']:
+            qualify = "test_build."
+        else:
+            qualify = "mpi_install."
+        where += "\n\t AND "+qualify+"compiler_version = '"+searching['compiler_version']+"'"
+        del searching["compiler_version"]
         
     #
     # Special Key: pass/fail/skip/timed/perf
@@ -350,6 +359,8 @@ def build_summary_sql(session=[], data=[]):
             else:
                 qf = qualify
         elif f == "compiler_name":
+            qf = "mpi_install."
+        elif f == "compiler_version":
             qf = "mpi_install."
         else:
             qf = ""
@@ -753,6 +764,15 @@ def build_detail_sql(session=[], data=[]):
             qualify = "mpi_install."
         where += "\n\t AND "+qualify+"compiler_name = '"+searching['compiler_name']+"'"
         del searching["compiler_name"]
+    if "compiler_version" in searching:
+        if 'install' in data['phases']:
+            qualify = "mpi_install."
+        elif 'test_build' in data['phases']:
+            qualify = "test_build."
+        else:
+            qualify = "mpi_install."
+        where += "\n\t AND "+qualify+"compiler_version = '"+searching['compiler_version']+"'"
+        del searching["compiler_version"]
 
     #
     # Special Key: pass/fail/skip/timed/perf
@@ -849,6 +869,8 @@ def build_detail_sql(session=[], data=[]):
         if f in tbl_str["results_fields"]:
             qf = qualify
         elif f == "compiler_name":
+            qf = "mpi_install."
+        elif f == "compiler_version":
             qf = "mpi_install."
         else:
             qf = ""
