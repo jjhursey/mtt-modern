@@ -147,6 +147,21 @@ def validate_search_parameters(db_settings, session=[], data=[], is_summary=True
             rtn['status_msg'] = "Validate Error: Expected exactly 3 fields other than the options field. %d supplied." % (len(data))
             return rtn
 
+    #
+    # Check options
+    #
+    if 'options' in data and "offset" in data['options']:
+        if data['options']['offset'] < 0:
+            rtn['status'] = -10
+            rtn['status_msg'] = "Validate Error: Options parameter 'offset' must be 0 or greater. %d supplied." % ( data['options']['offset'] )
+            return rtn
+    if 'options' in data and "limit" in data['options']:
+        if data['options']['limit'] < 0:
+            rtn['status'] = -10
+            rtn['status_msg'] = "Validate Error: Options parameter 'limit' must be 0 or greater. %d supplied." % ( data['options']['limit'] )
+            return rtn
+        
+
     
     #
     # Check the 'phases' field
