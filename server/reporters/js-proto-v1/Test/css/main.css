@@ -262,3 +262,19 @@ table.dataTable tbody td.selected {
     float:left;
     margin-top: 10px;
 }
+
+.green{
+    background-color: lightgreen;
+}
+
+.red{
+    background-color: lightcoral;
+}
+
+.yellow{
+    background-color: lightyellow;
+}
+
+.orange{
+    background-color: lightsalmon;
+}

@@ -12,15 +12,24 @@ $(document).ready(function() {
 
     // X Fixed phase change query, test run additional perf column,
     // X Implement pagination w/ page preload (preload not needed due to very fast response times)
-    //TODO: Fix drilldown when clicked in phase other than 'all' phase
+    // X: Fix drilldown when clicked in phase other than 'all' phase
     // X change dropdown options to match POST settings (all switch statements here...)
     // X Change state with start over button ( w/ automatic query )
     // X save last json request to compare - possibly use cache ( e.g. when hiding datatable )
     // X Add text "Showing x to y of z results" on details
+    // X Fix phase change behavior ( details report creation ) - removes details and brings user back to summary
+
+    // (N) Implement _more_ Handlebars (table creation)
+
     //TODO: Fix Show/Hide
     //TODO: Fix CSS
-    //TODO: Implement Handlebars (table creation)
-    // X Fix phase change behavior ( details report creation ) - removes details and brings user back to summary
+    //TODO: Fix Multiple Drill-Down on same selection bug (Destroys Table)
+    //TODO: Fix Start Over button mess
+
+    //TODO: Color code of Summary table
+    //TODO: Color code of Details table
+
+
 
     //problems:
     //  - status code 500
@@ -31,8 +40,6 @@ $(document).ready(function() {
 
     //determine when to destroy table (drilldowns)
     var oldphase;
-    var strike1; // phase is != all
-    var strike2; //
 
     var ns = {
         currentPhase: "all",
@@ -570,6 +577,7 @@ $(document).ready(function() {
             success: function(data){
                 if (isSum) {
                     buildTable( data.values );
+                    addCSS();
                     //fillColList( colList );
                     //buildSelect();
                 } else {
@@ -1644,13 +1652,80 @@ $(document).ready(function() {
 
 
     // Performance Buttons
+    $( document ).on( 'change', '#table', function(){
+       addCSS();
+    });
+
+    function addCSS(){
+        //var cells = table.cells().node();
+        //console.log( cells.data() );
+        //
+        //if( cells.data() > 0 ){
+        //    cell.addClass( 'green' );
+        //}
+        //console.log("hit");
+
+        var cells = $('td.immediate');
+
+        var cellData = table.cells( cells ).data();
+
+
+        table.cells().every( function () {
+
+            var colidx = this.index().column;
+            var colh = table.column( colidx ).header();
+            var colheader = $(colh).html();
+
+            if (this.data() > 0) {
+                if( colheader == "Pass" ){ $(this.node()).addClass( 'green' ); }
+                if( colheader == "Fail" ){ $(this.node()).addClass( 'red' ); }
+                if( colheader == "Skip" ){ $(this.node()).addClass( 'yellow' ); }
+                if( colheader == "Timed" ){ $(this.node()).addClass( 'orange' ); }
+            }
+        });
+    }
+    //
+    //    var color;
+    //
+    //    var ones = table
+    //        .cells( function ( idx, data, node ) {
+    //            var colh = table.column( idx.column ).header();
+    //            var colheader = $(colh).html();
+    //            //console.log( colheader );
+    //
+    //            if( data > 0 ){
+    //                switch( colheader ){
+    //                    case "Pass":
+    //                        color = "green";
+    //                        break;
+    //                    case "Fail":
+    //                        color = "red";
+    //                        break;
+    //                    case "Skip":
+    //                        console.log( colheader + " === Skip" );
+    //
+    //                        color = "yellow";
+    //                        break;
+    //                    case "Timed":
+    //                        color = "orange";
+    //                        break;
+    //                    default:
+    //                        color = "highlight";
+    //                        break;
+    //                }
+    //
+    //                //console.log( color );
+    //                return true;
+    //            }
+    //
+    //            return false;
+    //        } )
+    //        .nodes();
+    //
+    //    // Add a class to the cells
+    //    ones.to$().addClass( color );
 
 
 
 
-
-
-
-
-
-});
+    });
