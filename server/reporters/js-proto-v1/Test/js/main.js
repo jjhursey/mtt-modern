@@ -28,6 +28,12 @@ $(document).ready(function() {
 
     // 1618 -> change phase to test build -> click details button -> count = 5
 
+
+    //determine when to destroy table (drilldowns)
+    var oldphase;
+    var strike1; // phase is != all
+    var strike2; //
+
     var ns = {
         currentPhase: "all",
         /*sql*/state: "true",
@@ -286,7 +292,13 @@ $(document).ready(function() {
             "search": searchlist
         };
 
+
         if( grabJSON ){ return; }
+
+        //
+        if( columnIdx && oldphase == currentPhase && oldphase != "all" ){
+            table.destroy();
+        }
 
         if( isSum ) {
             makeTheRequest(type, jsonRequest, true);
@@ -296,7 +308,7 @@ $(document).ready(function() {
         }
 
         function grabColumns() {
-            if ( isSum ) {
+            if ( isSum )  {
                 switch (currentPhase) {
                     case "all":
                         columnlist = ALLLIST;
@@ -344,7 +356,8 @@ $(document).ready(function() {
     }
 
     function getSearchTerms( columnIdx ) {
-        var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'suite' ];
+        //grab search fields
+        var SEARCH_FIELDS = [ 'http_username', 'local_username', 'platform_name', 'platform_hardware', 'os_name', 'mpi_name', 'mpi_version', 'bitness', 'endian', 'compiler', 'compiler_version', 'test_suite_name', 'np' ];
         var terms = {};
 
         for (var i = SEARCH_FIELDS.length; i--;) {
@@ -356,6 +369,7 @@ $(document).ready(function() {
 
         //grab nums if clicked on for drill-down
         if( columnIdx ){
+            oldphase = currentPhase;
             appendSearch( terms, columnIdx );
         }
 
@@ -497,8 +511,6 @@ $(document).ready(function() {
     }
 
 
-
-
     /**
      * makeTheRequest: POST JSON request
      *
@@ -615,6 +627,7 @@ $(document).ready(function() {
         var sqlCol = $( 'div#sqlbox > div#columnwrapper > .col2' );
 
         var newColumns;
+        var columnsRaw;
         var sqlTable = "<table class='sqltextfields' id='table2' cellpadding='1' cellspacing='0' border='0'>" +
                             "<tr class='blankrow' ></tr>";
 
@@ -624,22 +637,25 @@ $(document).ready(function() {
                 break;
             case "install":
                 newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
+                columnsRaw = [ "configure_arguments", "compiler_name", "bitness", "endian" ];
 
-                sqlTable = buildSqlTableString( newColumns, sqlTable );
+                sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_build":
                 newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
+                columnsRaw = [ "test_suite_name", "compiler_version", "bitness" ];
 
-                sqlTable = buildSqlTableString( newColumns, sqlTable );
+                sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_run":
                 newColumns = [ "Suite", "Test", "np", "Command" ];
+                columnsRaw = [ "test_suite_name", "test_name", "np", "full_command" ];
 
-                sqlTable = buildSqlTableString( newColumns, sqlTable );
+                sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
@@ -648,13 +664,13 @@ $(document).ready(function() {
         }
     }
 
-    function buildSqlTableString( newColumns, table ){
+    function buildSqlTableString( newColumns, columnsRaw, table ){
         for( var i = 7; i < 11; i++ ){
             table +=
                 "<tr data-column='" + i + "'>" +
                     "<td>" + newColumns[ i-7 ] + "</td>" +
                     "<td align='center'>" +
-                    "<td> <input type='text'> </td>" +
+                    "<td> <input type='text' name='" + columnsRaw[i-7] + "'> </td>" +
                 "</tr>"
             ;
         }
@@ -1130,6 +1146,43 @@ $(document).ready(function() {
         }
     });
 
+    /**
+     * checkCol: Check if the index is a suitable drill down option and not just a number.
+     * @param data
+     */
+    function checkCol( colidx ){
+        switch( currentPhase ){
+            case "all":
+                //6-13
+                if( colidx > 5 && colidx < 14  ){
+                    return 1;
+                }
+                break;
+            case "install":
+                //9-10
+                if( colidx > 8 && colidx < 11  ){
+                    return 1;
+                }
+                break;
+            case "test_build":
+                //10-11
+                if( colidx > 9 && colidx < 12  ){
+                    return 1;
+                }
+                break;
+            case "test_run":
+                //8-11
+                if( colidx > 7 && colidx < 12  ){
+                    return 1;
+                }
+                break;
+            default:
+                break;
+        }
+
+        return 0; //hit if colidx is not in range of suitable drilldown
+    }
+
 
    //Drill Down - grab td cell data
     $( document ).on( 'click', tabletd, function () {
@@ -1140,9 +1193,9 @@ $(document).ready(function() {
         var field = $('.sqltextfields').find("input").eq( $(this).index() );
         var data = table.cell(this).data();
         var row;
-        var colidx;
+        var colidx = table.cell(this).index().column; //TODO: make sure this doesn't make false statements when requesting
 
-        if( isNaN( data ) ){
+        if( isNaN(data) ) {
             if( field.val() === data ){
                 field.val("");
                 field.focus();
@@ -1150,15 +1203,17 @@ $(document).ready(function() {
                 field.val(data);
                 field.focus();
             }
-        } else {
-            colidx = table.cell(this).index().column; // grab col's index
-            row = table.cell(this).index().row;       // grab cell's row index
+        } else if( checkCol(colidx) && data != "0" ) {
+            colidx = table.cell(this).index().column;           // grab col's index
+            row = table.cell(this).index().row;                 // grab cell's row index
 
-            parseRow( table.row( row ).data() );          // gather string data
+            parseRow( table.row( row ).data() );                // gather string data
             if( data !== 0 ){
-                pullValues('summary', colidx, false);         // gather num data with appendSearch()
+                pullValues('summary', colidx, false);           // gather num data with appendSearch()
                 $( 'button[value=details]' ).removeAttr('disabled');
             }
+        } else {
+            console.log("Not today, hotshot!");
         }
 
     } );
@@ -1439,7 +1494,7 @@ $(document).ready(function() {
     //show/hide
     $('#show-hide').click( function(){
         toggleCols();
-    } );
+    });
 
 
     //-------------------Detail HTML-------------------
