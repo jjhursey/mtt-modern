@@ -228,15 +228,17 @@ $(document).ready(function() {
         var tempstart = new Date(2014, 10, 29, 0, 0, 0);
 
         //set dropdown menu
-        $( 'select[name=dates]' ).val( 'past2weeks' );
+        $( 'select[name=dates]' ).val( 'past24hrs' );
 
-        var absoluteMin = new Date(2011, 0, 1);
-        var absoluteMax = new Date(2014, 9, 29);
+        var startDate =
+
+        //var absoluteMin = new Date(2011, 0, 1);
+        //var absoluteMax = new Date(2014, 9, 29);
 
         //datepicker configuration
         start.datepicker({
-            minDate: absoluteMin,
-            maxDate: absoluteMax,
+            //minDate: absoluteMin,
+            //maxDate: absoluteMax,
             changeMonth: true,
             changeYear: true,
             numberOfMonths: 2,
@@ -245,8 +247,8 @@ $(document).ready(function() {
             }
         });
         end.datepicker({
-            minDate: absoluteMin,
-            maxDate: absoluteMax,
+            //minDate: absoluteMin,
+            //maxDate: absoluteMax,
             changeMonth: true,
             changeYear: true,
             numberOfMonths: 2,
@@ -258,8 +260,10 @@ $(document).ready(function() {
 
 
         //field init
-        start.datepicker( 'setDate', tempstart );
-        end.datepicker( 'setDate', tempstart );
+        //start.datepicker( 'setDate', tempstart );
+        //end.datepicker( 'setDate', tempstart );
+        start.datepicker( 'setDate', '-1d' );
+        end.datepicker( 'setDate', new Date() );
     }
 
     /**
@@ -1034,8 +1038,8 @@ $(document).ready(function() {
      */
 
     //Uncommment when implementing final
-    //start.datepicker().datepicker('setDate', "-1d" );
-    //end.datepicker().datepicker('setDate', new Date() );
+    start.datepicker().datepicker('setDate', "-1d" );
+    end.datepicker().datepicker('setDate', new Date() );
 
     function getDate( selection ){
         var date = $( '#startdate' ).val();
@@ -1193,7 +1197,7 @@ $(document).ready(function() {
         var field = $('.sqltextfields').find("input").eq( $(this).index() );
         var data = table.cell(this).data();
         var row;
-        var colidx = table.cell(this).index().column; //TODO: make sure this doesn't make false statements when requesting
+        var colidx = table.cell(this).index().column;
 
         if( isNaN(data) ) {
             if( field.val() === data ){
