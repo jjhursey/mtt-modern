@@ -212,6 +212,7 @@ $(document).ready(function() {
     // Site Initilization
 
     (function init( ){
+        addClass();
         dateInit();
         fillColList( colList );
 
@@ -223,6 +224,21 @@ $(document).ready(function() {
         //buildTable();
         pullValues( "summary" );
     })();
+
+    function addClass(){
+        $('.sqltextfields')
+            .find( 'input' )
+            .addClass( 'column_filter' )
+            .prop( 'data-column', 1 );
+
+        for( var i = 0; i < 7; i++ ){
+            var selector = '.column_filter :eq(' + i + ')';
+            $( selector  )
+                .parents('tr')
+                .attr( 'data-column', i );
+        }
+
+    }
 
     function dateInit(){
         var tempstart = new Date(2014, 10, 29, 0, 0, 0);
@@ -1068,8 +1084,8 @@ $(document).ready(function() {
     }
 
     function setFields( date ){
-        //var now = new Date();
-        var now = new Date(2014, 10, 29, 0, 0, 0);
+        var now = new Date();
+        //var now = new Date(2014, 10, 29, 0, 0, 0);
         console.log( "NOW: " + now  );
 
         switch( date ){
@@ -1485,9 +1501,9 @@ $(document).ready(function() {
 
     //filter fields
     $( document ).on( 'keyup click focus', 'input.column_filter', function() {
-        if ( !state ) {
+        //if ( !state ) {
             filterColumn( $(this).parents('tr').attr('data-column') );
-        }
+        //}
     } );
 
     //clear
