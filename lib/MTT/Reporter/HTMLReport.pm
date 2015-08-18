@@ -68,10 +68,6 @@ sub Init
 	if(!defined($domain))
 	{
 		$domain  = Value($ini, $section, "web_url");
-		if(!defined($domain))
-		{
-			$domain = 'http://hpcweb.lab.mtl.com';
-		}
 	}
 
     # Make it an absolute filename, because there's oodles of
