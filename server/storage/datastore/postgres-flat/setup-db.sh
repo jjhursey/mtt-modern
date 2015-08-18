@@ -1,11 +1,11 @@
 DB=mttflat
 USER=mtt
-SERVER=flux2
+SERVER=flux1
 
 echo "-----------"
 echo "Drop/Create the database"
 echo "-----------"
-dropdb $DB
+dropdb -h $SERVER $DB
 
 createdb -U $USER -O $USER $DB "MTT Database (Flat)" -h $SERVER && \
 echo "-----------" && \
@@ -16,3 +16,4 @@ psql $DB -U $USER -h $SERVER -f schemas-index.sql && \
 echo "-----------" && \
 echo "All Done!" && \
 echo "-----------"
+#pushover-notice.pl "Created" $DB "on" $SERVER

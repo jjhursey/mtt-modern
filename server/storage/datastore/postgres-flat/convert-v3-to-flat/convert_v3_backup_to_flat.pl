@@ -9,11 +9,25 @@ use DBI;
 use Data::Dumper;
 use POSIX;
 
+#
+# If blank (not defined) then pushover message is never generated
+# If set to > 100 then only major sections are reported
+# if set to 0-100 then reports given at those intervals for test_run
+#
+#my $do_pushover_every = 20;
+my $do_pushover_every = 40;
+
+my $pushover_message = "MTT Convert Update:";
+my $pushover_script  = "pushover-notice.pl";
+
+
+########################################################################
+# Do not modify beyond this point
+########################################################################
 my $do_submit;
 my $do_mpi_install;
 my $do_test_build;
-my $do_test_run = 0;
-#my $do_test_run;
+my $do_test_run;
 
 my $restrict_test_run;
 ##############
@@ -68,10 +82,6 @@ $restrict_test_run = "start_timestamp >= '7-01-2012' AND start_timestamp < '8-01
 #$restrict_test_run = "start_timestamp < '1-01-2012'";
 #
 
-#my $do_pushover_every = 20; # Percentage completed to pushover a message (leave blank if none)
-my $do_pushover_every; # Percentage completed to pushover a message (leave blank if none)
-my $pushover_message = "MTT Convert Update:";
-my $pushover_script  = "pushover-notice.pl";
 
 ######################################################################
 ######################################################################
@@ -80,29 +90,66 @@ my $pushover_script  = "pushover-notice.pl";
 $| = 1;
 
 my $rng = "";
+my $start_ts;
+my $end_ts;
 
-if( scalar(@ARGV) == 2 ) {
-    $restrict_test_run = "start_timestamp >= '".$ARGV[0]."' AND start_timestamp < '".$ARGV[1]."'";
-    $rng = $ARGV[0]." to ".$ARGV[1];
+for( my $i = 0; $i < scalar(@ARGV); ++$i ) {
+    if( $ARGV[$i] eq "-s" ) {
+        $do_submit = 1;
+    }
+    elsif( $ARGV[$i] eq "-m" ) {
+        $do_mpi_install = 1;
+    }
+    elsif( $ARGV[$i] eq "-b" ) {
+        $do_test_build = 1;
+    }
+    elsif( $ARGV[$i] eq "-r" ) {
+        $do_test_run = 1;
+    }
+    elsif( !defined( $start_ts ) ) {
+        $start_ts = $ARGV[$i];
+    }
+    else {
+        $end_ts = $ARGV[$i];
+    }
 }
-elsif( scalar(@ARGV) == 1 ) {
-    $restrict_test_run = "start_timestamp >= '".$ARGV[0]."'";
-    $rng = $ARGV[0]." only";
+
+if( defined($start_ts) && defined($end_ts) ) {
+    $restrict_test_run = "start_timestamp >= '".$start_ts."' AND start_timestamp < '".$end_ts."'";
+    $rng = $start_ts." to ".$end_ts;
 }
-elsif( scalar(@ARGV) == 0 ) {
+elsif( defined($start_ts) && !defined($end_ts) ) {
+    $restrict_test_run = "start_timestamp >= '".$start_ts."'";
+    $rng = "After ".$start_ts." only";
+}
+elsif( !defined($start_ts) && !defined($end_ts) ) {
     $restrict_test_run = "start_timestamp < '1-01-2012'";
-    $rng = "1-01-2012 only (Default)";
+    $rng = "Before 1-01-2012 Default";
 }
 else {
     print "Error: Invalid argument set\n";
     exit -1;
 }
 
-if( !defined($do_pushover_every) ) {
-    system("$pushover_script $pushover_message Starting $rng");
+#
+# Display arguments
+#
+print "-"x70 . "\n";
+printf("Submit   : %s\n", (defined($do_submit) ? "Enabled" : "Disabled") );
+printf("Install  : %s\n", (defined($do_mpi_install) ? "Enabled" : "Disabled") );
+printf("T. Build : %s\n", (defined($do_test_build) ? "Enabled" : "Disabled") );
+printf("T. Run   : %s\n", (defined($do_test_run) ? "Enabled" : "Disabled") );
+print  "Range    : $rng\n";
+print  "Restr    : $restrict_test_run\n";
+printf("Pushover : %s\n", (!defined($do_pushover_every) ? "Never" : $do_pushover_every ) );
+print "-"x70 . "\n";
+
+if( defined($do_pushover_every) ) {
+    if( defined($do_test_run) ) {
+        system("$pushover_script $pushover_message Starting $rng");
+    }
 }
 
-#exit 0;
 
 ######################################################################
 ######################################################################
@@ -188,6 +235,9 @@ if( defined($do_submit) ) {
     system("date");
     $time_end = time();
     print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
+    if( defined($do_pushover_every) ) {
+        system("$pushover_script $pushover_message Finished submit");
+    }
 }
 else {
     print "Skipped... \t submit\n";
@@ -207,6 +257,9 @@ if( defined($do_mpi_install) ) {
     system("date");
     $time_end = time();
     print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
+    if( defined($do_pushover_every) ) {
+        system("$pushover_script $pushover_message Finished mpi_install");
+    }
 }
 else {
     print "Skipped... \t mpi_install\n";
@@ -226,6 +279,9 @@ if( defined($do_test_build) ) {
     system("date");
     $time_end = time();
     print "Elapsed: " . get_time_diff_as_str($time_start, $time_end) . "\n";
+    if( defined($do_pushover_every) ) {
+        system("$pushover_script $pushover_message Finished test_build");
+    }
 }
 else {
     print "Skipped... \t test_build\n";
@@ -261,7 +317,10 @@ print "-"x50 . "\n";
 $time_all_end = time();
 my $el = get_time_diff_as_str($time_all_start, $time_all_end);
 print "Total Elapsed: " . $el . "\n";
-system("$pushover_script $pushover_message All Done in \"$el\"");
+
+if( defined($do_pushover_every) ) {
+    system("$pushover_script $pushover_message All Done in \"$el\"");
+}
 
 exit 0;
 
