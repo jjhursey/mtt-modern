@@ -3,9 +3,24 @@
 Installation instructions for the [CherryPy](http://www.cherrypy.org/) backend option.
 
 ```
-pip install wheel
-pip install cherrypy
+./bin/mtt_server_install.py
+```
 
+Edit the configuration files
+```
+bin/mtt_server_config.ini
+../../.htaccess
+
+```
+
+Start the service
+```
+./bin/mtt_server_service.py start
+```
+
+
+## Other notes
+```
 # PostgreSQL support (Centos 6)
 export PATH=/usr/pgsql-9.3/bin/:$PATH
 pip install psycopg2
