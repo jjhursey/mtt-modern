@@ -7,4 +7,4 @@ url_docroot = string()
 log_level = option('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 log_file = string()
 
-[mttflat]
+[pg_flat]

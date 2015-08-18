@@ -4,11 +4,7 @@
 import requests
 import json
 
-#server_addr = "flux.cs.uwlax.edu"
-server_addr = "138.49.30.31"
-server_port = 9090
-
-base_url = "http://" + server_addr + ":" + str(server_port)
+base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
 
 
 ################################################################
@@ -218,7 +214,7 @@ def post_complex_detail(phase="install"):
 ################################################################
 # Main Program
 ################################################################
-#get_fields()
+
 #post_detail()
 #post_detail_options()
 post_complex_detail("install")

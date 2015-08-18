@@ -4,11 +4,7 @@
 import requests
 import json
 
-#server_addr = "flux.cs.uwlax.edu"
-server_addr = "138.49.30.31"
-server_port = 9090
-
-base_url = "http://" + server_addr + ":" + str(server_port)
+base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
 
 
 ################################################################
@@ -58,9 +54,9 @@ def post_summary():
     payload = {}
 
     payload['phases'] = []
-    #payload['phases'].append( 'install' )
+    payload['phases'].append( 'install' )
     #payload['phases'].append( 'test_build' )
-    payload['phases'].append( 'test_run' )
+    #payload['phases'].append( 'test_run' )
     #payload['phases'].append( 'all' )
 
     payload['columns'] = []
@@ -72,13 +68,12 @@ def post_summary():
     payload['columns'].append( 'mpi_version' )
     payload['columns'].append( 'bitness' )
     #payload['columns'].append( 'endian' )
-    #payload['columns'].append( 'bitness' )
     #payload['columns'].append( 'vpath_mode' )
     #payload['columns'].append( 'duration' )
     #payload['columns'].append( 'test_suite_name' )
     payload['columns'].append( 'compiler_name' )
     payload['columns'].append( 'compiler_version' )
-    payload['columns'].append( 'test_suite_name' )
+    #payload['columns'].append( 'test_suite_name' )
     
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
@@ -100,13 +95,16 @@ def post_summary():
     
     r = s.post(url, data=json.dumps(payload), headers=headers)
 
-    print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
-    result = r.json()
-    print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
-    print json.dumps(payload, sort_keys=True, indent=4, separators=(',',': '))
+    if r.status_code == 200:
+        print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
+        result = r.json()
+        print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+        print json.dumps(payload, sort_keys=True, indent=4, separators=(',',': '))
     
-    if result["values"] != None:
-        print "Length: " + str( len(result["values"]) )
+        if result["values"] != None:
+            print "Length: " + str( len(result["values"]) )
+    else:
+        print "Reason: \"%s\"" % str(r.reason)
 
 ################################################################
 #
@@ -261,13 +259,13 @@ def post_complex_summary(phase="install"):
 # Main Program
 ################################################################
 #get_fields()
-#get_summary()
+
 #post_summary()
 #post_summary_options()
 #post_complex_summary("install")
 #post_complex_summary("test_build")
 #post_complex_summary("test_run")
-#post_complex_summary("all")
+post_complex_summary("all")
 
 print "-" * 70
 

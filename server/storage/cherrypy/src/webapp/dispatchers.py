@@ -29,9 +29,8 @@ import random
 import string
 import datetime
 
-#import webapp.onrampdb as onrampdb
-import webapp.summary
-import webapp.detail
+import webapp.mtt_db as mttdb
+import webapp.check as check
 
 class _ServerResourceBase:
     """Provide functionality needed by all MTT Server resource dispatchers.
@@ -52,7 +51,6 @@ class _ServerResourceBase:
     exposed = True
 
     _db = None
-    _db_settings = {}
 
     def __init__(self, conf):
         """Instantiate MTT Server Resource.
@@ -77,39 +75,16 @@ class _ServerResourceBase:
         #
         # Define the Database - JJH TODO
         #
-        self.logger.debug("Setup database credentials")
-        #self._db = onrampdb.DBAccess(self.logger, 'sqlite', {'filename' : os.getcwd() + '/../tmp/onramp_sqlite.db'} )
-        #if self._db is None:
-        #    sys.exit(-1)
-        # JJH do not hardcode the section
-        section = "mttflat"
-        for option in conf[section]:
-            try:
-                self._db_settings[option] = conf.get( section, option)
-                if self._db_settings[option] == -1 :
-                    DebugPrint("Skipping option: %s" % option)
-            except:
-                print("Exception on %s!" % option)
-                self._db_settings[option] = None
+        self.logger.debug("Setup database connection")
+        _db_settings = {}
 
-        #
-        # Check settings for DB connection
-        #
-        self.logger.debug("-" * 70)
-        self.logger.debug("Check settings")
-        rtn_msg = self._check_settings()
+        section = "pg_flat"
+        _db_settings = conf[section]
 
-
-    def _check_settings(self):
-        if None == self._db_settings.get("type") or None == self._db_settings["type"]:
-            return "Error: Configuration settings missing the \"type\" field"
-        if None == self._db_settings.get("dbname") or None == self._db_settings["dbname"]:
-            return "Error: Configuration settings missing the \"dbname\" field"
-        if None == self._db_settings.get("username") or None == self._db_settings["username"]:
-            return "Error: Configuration settings missing the \"username\" field"
-        if None == self._db_settings.get("password") or None == self._db_settings["password"]:
-            return "Error: Configuration settings missing the \"password\" field"
-        return None
+        # Get a handle for the DB, and make sure it is available
+        self._db = mttdb.DBAccess(self.logger, section, _db_settings)
+        if self._db is None or self._db.is_available() is False:
+            sys.exit(-1)
 
 
     def _not_implemented(self, prefix):
@@ -121,7 +96,9 @@ class _ServerResourceBase:
 
     def _return_error(self, prefix, code, msg):
         self.logger.debug(prefix + " Error ("+str(code)+") = " + msg)
-        rtn = {}
+        rtn = { "fields" : None,
+                "values" : None,
+                "timing" : 0 }
         rtn['status'] = code
         rtn['status_message'] = msg
         return rtn
@@ -178,7 +155,125 @@ class Fields(_ServerResourceBase):
         prefix = '[GET /fields]'
         self.logger.debug(prefix)
 
-        return summary.fields(self._db_settings, cherrypy.session);
+        rtn = { "summary": {
+                "http_username"       : "Org",
+                "local_username"      : "Local username",
+                "platform_name"       : "Platform name",
+                "platform_hardware"   : "Hardware",
+                "os_name"             : "OS",
+                "mpi_name"            : "MPI name",
+                "mpi_version"         : "MPI version",
+                "os_version"          : "OS version",
+                "platform_type"       : "Platform type",
+                "hostname"            : "Hostname",
+                "compiler_name"       : "Compiler",
+                "compiler_version"    : "Compiler version",
+                "vpath_mode"          : "Vpath mode",
+                "endian"              : "Endian",
+                "bitness"             : "Bitness",
+                "exit_value"          : "Exit value",
+                "exit_signal"         : "Signal",
+                "duration"            : "Duration",
+                "np"                  : "np",
+                "test_suite_name"     : "Test Suite",
+                "test_name"           : "Test",
+                "compute_cluster"     : "Cluster",
+                "trial"               : "Trial",
+                "all_phases"          : "All phases",
+                "mpi_get"             : "MPI get",
+                "mpi_install"         : "MPI install",
+                "mpi_install_pass"    : "MPI install Pass",
+                "mpi_install_fail"    : "MPI install Fail",
+                "test_build"          : "Test build",
+                "test_build_pass"     : "Test build Pass",
+                "test_build_fail"     : "Test build Fail",
+                "test_run"            : "Test run",
+                "test_run_pass"       : "Test run Pass",
+                "test_run_fail"       : "Test run Fail",
+                "test_run_skip"       : "Test run Skip",
+                "test_run_timed"      : "Test run Timed",
+                "test_run_perf"       : "Test run Perf"
+                },
+                "detail": {
+                "full_command"        : "Command",
+                "configure_arguments" : "Configure arguments",
+                "description"         : "Description",
+                "launcher"            : "Launcher",
+                "resource_mgr"        : "Resource Manager",
+                "parameters"          : "Runtime Parameters",
+                "network"             : "Network",
+                "result_message"      : "Result message",
+                "result_stderr"       : "Stderr",
+                "result_stdout"       : "Stdout",
+                "merge_stdout_stderr" : "Merge stdout stderr",
+                "start_timestamp"     : "Date range",
+                "environment"         : "Environment",
+                "bandwidth_avg"       : "Bandwidth avg.",
+                "bandwidth_max"       : "Bandwidth max.",
+                "bandwidth_min"       : "Bandwidth min.",
+                "latency_avg"         : "Latency avg.",
+                "latency_max"         : "Latency max.",
+                "latency_min"         : "Latency min.",
+                "message_size"        : "Message size",
+                "message_size_range"  : "Message sizes",
+                "mtt_version_major"   : "MTT version major",
+                "mtt_version_minor"   : "MTT version minor",
+                "mtt_client_version"  : "MTT version",
+                "submit_timestamp"    : "Date range",
+                "test_result"         : "Test result",
+                "username"            : "Username",
+                "value"               : "Value"
+                },
+                "unsorted": {
+                "submit"            : "Submit",
+                "results"           : "Results",
+                "_mpi_p"            : "pass",
+                "_mpi_f"            : "fail",
+                "_build_p"          : "pass",
+                "_build_f"          : "fail",
+                "_run_p"            : "pass",
+                "_run_f"            : "fail",
+                "_run_s"            : "skipped",
+                "_run_t"            : "timed_out",
+                "_run_l"            : "latency_bandwidth",
+                "pass"              : "Pass",
+                "fail"              : "Fail",
+                "skip"              : "Skip",
+                "timed"             : "Timed",
+                "skipped"           : "Skip",
+                "timed_out"         : "Timed",
+                "latency_bandwidth" : "Perf",
+                "latency_avg"       : "Average Latency",
+                "latency_min"       : "Minimum Latency",
+                "latency_max"       : "Maximum Latency",
+                "bandwidth_avg"     : "Average Bandwidth",
+                "bandwidth_min"     : "Minimum Bandwidth",
+                "bandwidth_max"     : "Maximum Bandwidth"
+                }
+                }
+
+          #     "adv_cluster": {
+          #   "os_version"          : "OS version",
+          #   "platform_type"       : "Platform type"
+          # },
+          # "adv_mpi_install": {
+          #   "compiler_name"       : "Compiler",
+          #   "compiler_version"    : "Compiler version",
+          #   "vpath_mode"          : "Vpath mode",
+          #   "endian"              : "Endian",
+          #   "bitness"             : "Bitness",
+          #   "configure_arguments" : "Configure arguments"
+          # },
+          # "adv_test_build": {
+          #   "todo"            : "Todo",
+          #   "todo2"           : "Todo 2"
+          # },
+          # "adv_test_run": {
+          #   "todo"            : "Todo",
+          #   "todo2"           : "Todo 2"
+          # },
+
+        return rtn
 
 ########################################################
 # Summary
@@ -186,59 +281,58 @@ class Fields(_ServerResourceBase):
 class Summary(_ServerResourceBase):
 
     #
-    # GET /summary
-    # GET /summary/$phase
+    # POST /summary
     #
     @cherrypy.tools.json_out()
-    def GET(self, phase="all", **kwargs):
+    @cherrypy.tools.json_in()
+    def POST(self, **kwargs):
         prefix = '[GET /summary]'
         self.logger.debug(prefix)
 
-        data = {}
+        rtn = {}
+        rtn['status'] = 0
+        rtn['status_message'] = 'Success'
+
+        # Make sure they sent JSON data
+        if not hasattr(cherrypy.request, "json"):
+            self.logger.error(prefix + " No json data sent")
+            raise cherrypy.HTTPError(400)
+
+        data = cherrypy.request.json
         start_time = datetime.datetime.now()
         end_time = datetime.datetime.now()
 
-        self.logger.debug("m" * 80)
+
         self.logger.debug("m" * 80)
         self.logger.debug("m" * 80)
         self.logger.debug("mmmm  New Summary Request")
         self.logger.debug("m" * 80)
-
-        self.logger.debug("----------------------")
+        self.logger.debug("m" * 80)
         pp = pprint.PrettyPrinter(indent=4)
-        self.logger.debug(pp.pformat(cherrypy.request.headers))
-        self.logger.debug("----------------------")
+        self.logger.debug("(Headers) = \n"+pp.pformat(cherrypy.request.headers))
+        self.logger.debug("m" * 80)
+        self.logger.debug("(Data) = \n" + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
+        self.logger.debug("m" * 80)
 
         self.logger.debug("-" * 70)
         self.logger.debug("Preprocess parameters")
 
         #
-        # If they sent JSON data, then use that
+        # Determine the 'phases'
         #
-        if hasattr(cherrypy.request, "json"):
-            data = cherrypy.request.json
-            if "phases" not in data:
-                rtn = { "fields" : None, "values" : None, "timing" : str(datetime.datetime.now() - start_time) }
-                rtn['status'] = -1
-                rtn['status_msg'] = "Error: Parameter 'phases' not supplied."
-                return rtn
-            if len(data["phases"]) == 0:
-                phases = []
-                phases.append( "all" )
-                data["phases"] = phases
-            elif type(data["phases"]) is not list:
-                phases = []
-                phases.append( data["phases"] )
-                data["phases"] = phases
-            else:
-                phases = data["phases"]
-            self.logger.debug("Type: %s" %( type(data["phases"]) ) )
-            self.logger.debug("(All) = " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
-        # Otherwise build it from the parameters
-        else:
-            self.logger.debug("Not a JSON Request")
+        phases = []
+        if "phases" not in data:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' not supplied.")
+        if len(data["phases"]) == 0:
+            phases.append( "all" )
             data["phases"] = phases
-            
+        elif type(data["phases"]) is not list:
+            phases.append( data["phases"] )
+            data["phases"] = phases
+        else:
+            phases = data["phases"]
+
+        self.logger.debug("Type: %s" %( type(data["phases"]) ) )
         self.logger.debug("(Phase) = \""+ ",".join(phases) +"\"")
         
         cherrypy.session['phases'] = phases
@@ -248,10 +342,10 @@ class Summary(_ServerResourceBase):
         #
         self.logger.debug("-" * 70)
         self.logger.debug("Validate Parameters")
-        rtn = summary.validate_search_parameters(self._db_settings, cherrypy.session, data)
+        rtn = check.validate_search_parameters(self._db, self.logger, cherrypy.session, data)
         if rtn['status'] != 0:
-            self.logger.debug("Validate Failed:")
-            self.logger.debug("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
+            self.logger.error("Validate Failed:")
+            self.logger.error("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
             return rtn
         
         #
@@ -259,8 +353,32 @@ class Summary(_ServerResourceBase):
         #
         self.logger.debug("-" * 70)
         self.logger.debug("Perform search")
-        rtn = summary.index(self._db_settings, cherrypy.session, data)
-        
+        fields = ["http_username",
+                  "platform_name",
+                  "platform_hardware",
+                  "os_name",
+                  "mpi_name",
+                  "mpi_version",
+                  "mpi_install_pass",
+                  "mpi_install_fail",
+                  "test_build_pass",
+                  "test_build_fail",
+                  "test_run_pass",
+                  "test_run_fail",
+                  "test_run_skip",
+                  "test_run_timed",
+                  "test_run_perf"]
+
+        rows, fields = self._db.run_summary(cherrypy.session, data)
+        if rows is None:
+            rtn = { "fields" : fields, "values" : None }
+        else:
+            rtn = { "fields" : fields, "values" : rows }
+
+        #
+        # Build the response
+        #
+        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
         rtn['status'] = 0
         rtn['status_msg'] = 'Success'
         rtn['timing'] = str(datetime.datetime.now() - start_time)
@@ -276,59 +394,64 @@ class Summary(_ServerResourceBase):
 class Detail(_ServerResourceBase):
 
     #
-    # GET /detail
-    # GET /detail/$phase
+    # POST /detail
+    # POST /detail/$phase
+    #
+    #
+    # POST /summary
     #
     @cherrypy.tools.json_out()
-    def GET(self, phase="all", **kwargs):
+    @cherrypy.tools.json_in()
+    def POST(self, **kwargs):
         prefix = '[GET /detail]'
         self.logger.debug(prefix)
 
-        data = {}
+        rtn = {}
+        rtn['status'] = 0
+        rtn['status_message'] = 'Success'
+
+        # Make sure they sent JSON data
+        if not hasattr(cherrypy.request, "json"):
+            self.logger.error(prefix + " No json data sent")
+            raise cherrypy.HTTPError(400)
+
+        data = cherrypy.request.json
         start_time = datetime.datetime.now()
         end_time = datetime.datetime.now()
 
-        self.logger.debug("m" * 80)
+
         self.logger.debug("m" * 80)
         self.logger.debug("m" * 80)
         self.logger.debug("mmmm  New Detail Request")
         self.logger.debug("m" * 80)
-
-        self.logger.debug("----------------------")
+        self.logger.debug("m" * 80)
         pp = pprint.PrettyPrinter(indent=4)
-        self.logger.debug(pp.pformat(cherrypy.request.headers))
-        self.logger.debug("----------------------")
+        self.logger.debug("(Headers) = \n"+pp.pformat(cherrypy.request.headers))
+        self.logger.debug("m" * 80)
+        self.logger.debug("(Data) = \n" + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
+        self.logger.debug("m" * 80)
 
         self.logger.debug("-" * 70)
         self.logger.debug("Preprocess parameters")
 
         #
-        # If they sent JSON data, then use that
+        # Determine the 'phases'
         #
-        if hasattr(cherrypy.request, "json"):
-            data = cherrypy.request.json
-            if "phases" not in data:
-                rtn = { "fields" : None, "values" : None, "timing" : str(datetime.datetime.now() - start_time) }
-                rtn['status'] = -1
-                rtn['status_msg'] = "Error: Parameter 'phases' not supplied."
-                return rtn
-            if len(data["phases"]) == 0:
-                phases = []
-                phases.append( "all" )
-                data["phases"] = phases
-            elif type(data["phases"]) is not list:
-                phases = []
-                phases.append( data["phases"] )
-                data["phases"] = phases
-            else:
-                phases = data["phases"]
-            self.logger.debug("Type: %s" %( type(data["phases"]) ) )
-            self.logger.debug("(All) = " + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
-        # Otherwise build it from the parameters
-        else:
-            self.logger.debug("Not a JSON Request")
+        phases = []
+        if "phases" not in data:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' not supplied.")
+        elif len(data["phases"]) != 1:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' must contain only one option.")
+        elif type(data["phases"]) is not list:
+            phases.append( data["phases"] )
             data["phases"] = phases
-            
+        else:
+            phases = data["phases"]
+
+        if phases[0] not in {"install", "test_build", "test_run"}:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' unsupported \""+phases[0]+"\".")
+
+        self.logger.debug("Type: %s (%d)" %( type(data["phases"]), len(data["phases"]) ) )
         self.logger.debug("(Phase) = \""+ ",".join(phases) +"\"")
         
         cherrypy.session['phases'] = phases
@@ -338,10 +461,10 @@ class Detail(_ServerResourceBase):
         #
         self.logger.debug("-" * 70)
         self.logger.debug("Validate Parameters")
-        rtn = summary.validate_search_parameters(self._db_settings, cherrypy.session, data, False)
+        rtn = check.validate_search_parameters(self._db, self.logger, cherrypy.session, data)
         if rtn['status'] != 0:
-            self.logger.debug("Validate Failed:")
-            self.logger.debug("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
+            self.logger.error("Validate Failed:")
+            self.logger.error("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
             return rtn
         
         #
@@ -349,15 +472,42 @@ class Detail(_ServerResourceBase):
         #
         self.logger.debug("-" * 70)
         self.logger.debug("Perform search")
-        rtn = detail.index(self._db_settings, cherrypy.session, data)
+        fields = ["http_username",
+                  "platform_name",
+                  "platform_hardware",
+                  "os_name",
+                  "mpi_name",
+                  "mpi_version",
+                  "compiler_name",
+                  "vpath_mode",
+                  "compiler_version",
+                  "configure_arguments",
+                  "description",
+                  "exit_value",
+                  "exit_signal",
+                  "result_message",
+                  "result_stdout",
+                  "result_stderr",
+                  "environment"
+                  ]
+
+        rows, fields = self._db.run_detail(cherrypy.session, data)
+        if rows is None:
+            rtn = { "fields" : fields, "values" : None }
+        else:
+            rtn = { "fields" : fields, "values" : rows }
 
         #
-        # Shape up the output header
+        # Build the response
         #
+        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
         rtn['status'] = 0
         rtn['status_msg'] = 'Success'
         rtn['timing'] = str(datetime.datetime.now() - start_time)
 
+        #self.logger.debug("(Final) " + json.dumps(rtn, sort_keys=True, indent=4, separators=(',',': ')))
+        
         return rtn;
+
 
 ########################################################
