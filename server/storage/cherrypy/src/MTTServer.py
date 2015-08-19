@@ -13,7 +13,7 @@ from cherrypy.process.plugins import Daemonizer, PIDFile
 from configobj import ConfigObj
 from validate import Validator
 
-from webapp.dispatchers import Root, Fields, Summary, Detail
+from webapp.dispatchers import Root, Fields, Summary, Detail, Info
 
 
 def _CORS():
@@ -143,6 +143,7 @@ if __name__ == '__main__':
     cherrypy.tree.mount(Fields(ini),     '/fields',   conf)
     cherrypy.tree.mount(Summary(ini),    '/summary',  conf)
     cherrypy.tree.mount(Detail(ini),     '/detail',   conf)
+    cherrypy.tree.mount(Info(ini),       '/info',   conf)
 
     logger.info('Starting cherrypy engine')
     cherrypy.engine.start()

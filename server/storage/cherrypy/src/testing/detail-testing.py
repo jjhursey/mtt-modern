@@ -154,6 +154,8 @@ def post_complex_detail(phase="install"):
     payload['columns'].append('os_name')
     payload['columns'].append('mpi_name')
     payload['columns'].append('mpi_version')
+    payload['columns'].append('duration')
+    payload['columns'].append('start_timestamp')
     payload['columns'].append('compiler_name')
     payload['columns'].append('configure_arguments')
 

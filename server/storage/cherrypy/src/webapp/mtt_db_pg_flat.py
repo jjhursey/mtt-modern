@@ -107,6 +107,24 @@ class Database_pg_flat( mtt_db.Database ):
 
         return rows, fields
 
+    def get_runtime(self, session=[], data=[]):
+        sql, fields = self._build_runtime_sql(session, data)
+        if None == sql:
+            return None
+
+        self._logger.debug(self._name + " (SQL) = \n" + sql)
+
+        self._cursor.execute(sql + ";")
+        self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
+        rows = self._cursor.fetchall()
+
+        if rows[0] is None or rows[0][0] is None:
+            self._logger.debug(self._name + " NONE!!!!!!!!!!")
+        self._logger.debug(self._name + " Len = " + str(len(rows)) + " type = " + str(type(rows[0][0])) )
+
+        return rows, fields
+
+
     ##########################################################
     # Internal functionality
     ##########################################################
@@ -1053,5 +1071,40 @@ class Database_pg_flat( mtt_db.Database ):
                 final_fields.append(re.sub(qualify, '', f))
             else:
                 final_fields.append(f)
+
+        return sql, final_fields
+
+
+    def _build_runtime_sql(self, session=[], data=[]):
+
+        self._logger.debug(self._name + " Start: " + data['search']['start_timestamp'])
+        self._logger.debug(self._name + " End  : " + data['search']['end_timestamp'])
+
+        #
+        # determine qualifier
+        #
+        select_from_table = ""
+        if 'install' in data['phases']:
+            select_from_table = "mpi_install"
+        elif 'test_build' in data['phases']:
+            select_from_table = "test_build"
+        elif 'test_run' in data['phases']:
+            select_from_table = "test_run"
+        else:
+            return None
+
+
+        # JJH Assumes that we are searching for test_name only
+        sql  = "SELECT MIN(duration) as min, AVG(duration) as avg, MAX(duration) as max"
+        sql += "\n"
+        sql += "FROM "
+        sql += select_from_table
+        sql += "\n"
+        sql += "WHERE "
+        sql += "\n\t" + select_from_table+".start_timestamp >= '"+data['search']['start_timestamp']+"' AND"
+        sql += "\n\t" + select_from_table+".start_timestamp <= '"+data['search']['end_timestamp']+"' AND"
+        sql += "\n\t" + select_from_table+".test_name = '"+data['search']['test_name']+"'"
+
+        final_fields = ['duration']
 
         return sql, final_fields

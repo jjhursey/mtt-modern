@@ -32,6 +32,27 @@ import datetime
 import webapp.mtt_db as mttdb
 import webapp.check as check
 
+#
+# JSON serialization of datetime objects
+#
+class _JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return obj.isoformat()
+        # timedelta does not have a isoformat
+        elif isinstance(obj, datetime.timedelta):
+            return str(obj).split('.',2)[0]
+        return super().default(obj)
+
+_json_encoder = _JSONEncoder()
+
+def _json_handler(*args, **kwargs):
+    # Adapted from cherrypy/lib/jsontools.py
+    value = cherrypy.serving.request._json_inner_handler(*args, **kwargs)
+
+    return _json_encoder.iterencode(value)
+
+
 class _ServerResourceBase:
     """Provide functionality needed by all MTT Server resource dispatchers.
 
@@ -283,7 +304,7 @@ class Summary(_ServerResourceBase):
     #
     # POST /summary
     #
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=_json_handler)
     @cherrypy.tools.json_in()
     def POST(self, **kwargs):
         prefix = '[GET /summary]'
@@ -400,7 +421,7 @@ class Detail(_ServerResourceBase):
     #
     # POST /summary
     #
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=_json_handler)
     @cherrypy.tools.json_in()
     def POST(self, **kwargs):
         prefix = '[GET /detail]'
@@ -466,7 +487,7 @@ class Detail(_ServerResourceBase):
             self.logger.error("Validate Failed:")
             self.logger.error("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
             return rtn
-        
+
         #
         # Perform the search
         #
@@ -506,6 +527,118 @@ class Detail(_ServerResourceBase):
         rtn['timing'] = str(datetime.datetime.now() - start_time)
 
         #self.logger.debug("(Final) " + json.dumps(rtn, sort_keys=True, indent=4, separators=(',',': ')))
+        
+        return rtn;
+
+
+########################################################
+# Runtime
+########################################################
+class Info(_ServerResourceBase):
+
+    #
+    # POST /info
+    #
+    @cherrypy.tools.json_out(handler=_json_handler)
+    @cherrypy.tools.json_in()
+    def POST(self, level, **kwargs):
+        prefix = '[GET /info/'+level+']'
+        self.logger.debug(prefix)
+
+        if level == "runtime":
+            return self._info_runtime( )
+        else:
+            self.logger.error(prefix + " Unsupported URL")
+            raise cherrypy.HTTPError(400)
+
+    #
+    # POST /info/runtime
+    #
+    def _info_runtime( self ):
+        prefix = '[GET /info/runtime]'
+        self.logger.debug(prefix)
+
+        rtn = {}
+        rtn['status'] = 0
+        rtn['status_message'] = 'Success'
+
+        # Make sure they sent JSON data
+        if not hasattr(cherrypy.request, "json"):
+            self.logger.error(prefix + " No json data sent")
+            raise cherrypy.HTTPError(400)
+
+        data = cherrypy.request.json
+        start_time = datetime.datetime.now()
+        end_time = datetime.datetime.now()
+
+
+        self.logger.debug("m" * 80)
+        self.logger.debug("m" * 80)
+        self.logger.debug("mmmm  New Runtime Request")
+        self.logger.debug("m" * 80)
+        self.logger.debug("m" * 80)
+        pp = pprint.PrettyPrinter(indent=4)
+        self.logger.debug("(Headers) = \n"+pp.pformat(cherrypy.request.headers))
+        self.logger.debug("m" * 80)
+        self.logger.debug("(Data) = \n" + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
+        self.logger.debug("m" * 80)
+
+        self.logger.debug("-" * 70)
+        self.logger.debug("Preprocess parameters")
+
+        #
+        # Determine the 'phases'
+        #
+        phases = []
+        if "phases" not in data:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' not supplied.")
+        elif len(data["phases"]) != 1:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' must contain only one option.")
+        elif type(data["phases"]) is not list:
+            phases.append( data["phases"] )
+            data["phases"] = phases
+        else:
+            phases = data["phases"]
+
+        if phases[0] not in {"install", "test_build", "test_run"}:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' unsupported \""+phases[0]+"\".")
+
+        self.logger.debug("Type: %s (%d)" %( type(data["phases"]), len(data["phases"]) ) )
+        self.logger.debug("(Phase) = \""+ ",".join(phases) +"\"")
+        
+        cherrypy.session['phases'] = phases
+
+        #
+        # Validate the search parameters
+        #
+        self.logger.debug("-" * 70)
+        self.logger.debug("Validate Parameters")
+        rtn = check.validate_runtime_parameters(self._db, self.logger, cherrypy.session, data)
+        if rtn['status'] != 0:
+            self.logger.error("Validate Failed:")
+            self.logger.error("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
+            return rtn
+        
+        #
+        # Perform the search
+        #
+        self.logger.debug("-" * 70)
+        self.logger.debug("Perform search")
+        fields = ["duration"]
+
+        rows, fields = self._db.get_runtime(cherrypy.session, data)
+        if rows is None:
+            rtn = { "fields" : fields, "values" : None }
+        else:
+            rtn = { "fields" : fields, "values" : rows }
+
+        #
+        # Build the response
+        #
+        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
+        rtn['status'] = 0
+        rtn['status_msg'] = 'Success'
+        rtn['timing'] = str(datetime.datetime.now() - start_time)
         
         return rtn;
 
