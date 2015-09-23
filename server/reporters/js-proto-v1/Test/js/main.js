@@ -10,15 +10,6 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    // X Fixed phase change query, test run additional perf column,
-    // X Implement pagination w/ page preload (preload not needed due to very fast response times)
-    // X: Fix drilldown when clicked in phase other than 'all' phase
-    // X change dropdown options to match POST settings (all switch statements here...)
-    // X Change state with start over button ( w/ automatic query )
-    // X save last json request to compare - possibly use cache ( e.g. when hiding datatable )
-    // X Add text "Showing x to y of z results" on details
-    // X Fix phase change behavior ( details report creation ) - removes details and brings user back to summary
-
     // (N) Implement _more_ Handlebars (table creation)
 
     //TODO: Fix Show/Hide
@@ -26,7 +17,7 @@ $(document).ready(function() {
     //TODO: Fix Multiple Drill-Down on same selection bug (Destroys Table)
     //TODO: Fix Start Over button mess
 
-    //TODO: Color code of Summary table
+    // X Color code of Summary table
     //TODO: Color code of Details table
 
 
@@ -165,11 +156,27 @@ $(document).ready(function() {
     var end = $( "#enddate" );
 
     //
-    var colList =  [];
+    var colList =  [
+        "Org",
+        "Platform name",
+        "Hardware",
+        "OS",
+        "MPI name",
+        "MPI Install",
+        "Test Build",
+        "Test Run"
+    ];
     var showColList = [];
     var hideColList = [];
 
     var stringCols = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version",
+        "mpi_install.compiler_name"
         //"http_username",
         //"platform_name",
         //"platform_hardware",
@@ -179,16 +186,16 @@ $(document).ready(function() {
         //"mpi_install.compiler_name"
     ];
     var intCols = [
-        //"mpi_install_pass",
-        //"mpi_install_fail",
-        //"test_build_pass",
-        //"test_build_fail",
-        //"test_run_pass",
-        //"test_run_fail",
-        //"test_run_skip",
-        //"test_run_timed",
-        //"bitness",
-        //"endian"
+        "mpi_install_pass",
+        "mpi_install_fail",
+        "test_build_pass",
+        "test_build_fail",
+        "test_run_pass",
+        "test_run_fail",
+        "test_run_skip",
+        "test_run_timed",
+        "bitness",
+        "endian"
     ];
 
     var showStrColList = [];
@@ -252,8 +259,6 @@ $(document).ready(function() {
 
         //set dropdown menu
         $( 'select[name=dates]' ).val( 'past24hrs' );
-
-        var startDate =
 
         //var absoluteMin = new Date(2011, 0, 1);
         //var absoluteMax = new Date(2014, 9, 29);
@@ -547,7 +552,7 @@ $(document).ready(function() {
      * @param type - 'summary'/'detail' - postfix to url for request type
      */
     function makeTheRequest ( type, json, isSum, check ){
-        var url = "http://138.49.30.31:9090/" + type;
+        var url = "http://flux.cs.uwlax.edu/mtt/api" + type;
         lastJSON = json;
 
         //compare objects with Lo-Dash to prevent requesting same data twice in a row
@@ -578,8 +583,8 @@ $(document).ready(function() {
                 if (isSum) {
                     buildTable( data.values );
                     addCSS();
-                    //fillColList( colList );
-                    //buildSelect();
+                    fillColList( ALLLIST );
+                    buildSelect();
                 } else {
                     if (check) {
                         count = data.values[0][0];
@@ -877,9 +882,13 @@ $(document).ready(function() {
      */
 
     function fillColList( list ){
-        for( var i = 0; i < colList.length; i++  ) {
-            var name = list[i];var input = "<option value'" + name + "'>" + name + "</option>";
+        //$('#my-select').multiSelect('refresh');
+
+        for( var i = 0; i < list.length; i++ ) {
+            var name = list[i];
+            var input = "<option value'" + name + "'>" + name + "</option>";
             $('#my-select').append( input );
+            console.log( input );
         }
     }
 
@@ -1093,8 +1102,8 @@ $(document).ready(function() {
 
     function setFields( date ){
         var now = new Date();
-        //var now = new Date(2014, 10, 29, 0, 0, 0);
-        console.log( "NOW: " + now  );
+        //console.log( "NOW: " + now  );
+        start.datepicker('option', 'maxDate', now );
 
         switch( date ){
             case "today":
@@ -1131,6 +1140,7 @@ $(document).ready(function() {
                 end.datepicker( 'setDate', now );
                 break;
             case "past2weeks":
+                start.datepicker('option', 'maxDate', now );
                 start.datepicker( 'setDate', "-2w" );
                 end.datepicker( 'setDate', now );
                 break;
@@ -1143,6 +1153,7 @@ $(document).ready(function() {
     function setMoments(){
         var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
         var enddate = $( '#enddate' ).val();
+        //var enddate = new Date();
 
         startMoment = startdate.format( REQUESTFORMAT );
         endMoment = moment( new Date(enddate) ).endOf('day');
@@ -1656,15 +1667,8 @@ $(document).ready(function() {
        addCSS();
     });
 
+    //color cordination
     function addCSS(){
-        //var cells = table.cells().node();
-        //console.log( cells.data() );
-        //
-        //if( cells.data() > 0 ){
-        //    cell.addClass( 'green' );
-        //}
-        //console.log("hit");
-
         var cells = $('td.immediate');
 
         var cellData = table.cells( cells ).data();
@@ -1684,48 +1688,6 @@ $(document).ready(function() {
             }
         });
     }
-    //
-    //    var color;
-    //
-    //    var ones = table
-    //        .cells( function ( idx, data, node ) {
-    //            var colh = table.column( idx.column ).header();
-    //            var colheader = $(colh).html();
-    //            //console.log( colheader );
-    //
-    //            if( data > 0 ){
-    //                switch( colheader ){
-    //                    case "Pass":
-    //                        color = "green";
-    //                        break;
-    //                    case "Fail":
-    //                        color = "red";
-    //                        break;
-    //                    case "Skip":
-    //                        console.log( colheader + " === Skip" );
-    //
-    //                        color = "yellow";
-    //                        break;
-    //                    case "Timed":
-    //                        color = "orange";
-    //                        break;
-    //                    default:
-    //                        color = "highlight";
-    //                        break;
-    //                }
-    //
-    //                //console.log( color );
-    //                return true;
-    //            }
-    //
-    //            return false;
-    //        } )
-    //        .nodes();
-    //
-    //    // Add a class to the cells
-    //    ones.to$().addClass( color );
 
 
-
-
-    });
+});
