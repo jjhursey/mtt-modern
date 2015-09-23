@@ -4,7 +4,7 @@
 import requests
 import json
 
-base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
+base_url = "http://flux.cs.uwlax.edu/mtt/api"
 
 
 ################################################################
@@ -19,6 +19,7 @@ def post_detail():
 
     payload = {}
 
+    #payload['phases'] = "test_build"
     payload['phases'] = []
     #payload['phases'].append( 'install' )
     payload['phases'].append( 'test_build' )
@@ -217,9 +218,9 @@ def post_complex_detail(phase="install"):
 # Main Program
 ################################################################
 
-#post_detail()
+post_detail()
 #post_detail_options()
-post_complex_detail("install")
+#post_complex_detail("install")
 #post_complex_detail("test_build")
 #post_complex_detail("test_run")
 #post_complex_detail("all")

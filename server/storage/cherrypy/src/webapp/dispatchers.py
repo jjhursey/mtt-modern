@@ -461,11 +461,11 @@ class Detail(_ServerResourceBase):
         phases = []
         if "phases" not in data:
             return self._return_error(prefix, -1, "Error: Parameter 'phases' not supplied.")
-        elif len(data["phases"]) != 1:
-            return self._return_error(prefix, -1, "Error: Parameter 'phases' must contain only one option.")
         elif type(data["phases"]) is not list:
             phases.append( data["phases"] )
             data["phases"] = phases
+        elif len(data["phases"]) != 1:
+            return self._return_error(prefix, -1, "Error: Parameter 'phases' must contain only one option.")
         else:
             phases = data["phases"]
 
