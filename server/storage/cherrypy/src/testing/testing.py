@@ -4,7 +4,8 @@
 import requests
 import json
 
-base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
+#base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
+base_url = "http://flux.cs.uwlax.edu/mtt/api"
 
 
 ################################################################
@@ -67,19 +68,20 @@ def post_summary():
     payload['columns'].append( 'mpi_name' )
     payload['columns'].append( 'mpi_version' )
     payload['columns'].append( 'bitness' )
-    #payload['columns'].append( 'endian' )
+    payload['columns'].append( 'endian' )
     #payload['columns'].append( 'vpath_mode' )
     #payload['columns'].append( 'duration' )
     #payload['columns'].append( 'test_suite_name' )
     payload['columns'].append( 'compiler_name' )
-    payload['columns'].append( 'compiler_version' )
+    #payload['columns'].append( 'compiler_version' )
     #payload['columns'].append( 'test_suite_name' )
     
     payload['search'] = {}
-    payload['search']['start_timestamp'] = '2014-10-15 02:00:00'
-    payload['search']['end_timestamp']   = '2014-10-15 22:00:00'
-    #payload['search']['test_suite_name']   = 'trivial'
-    payload['search']['compiler_name']   = 'gnu'
+    payload['search']['start_timestamp'] = '2013-10-02 11:59:59 pm'
+    payload['search']['end_timestamp']   = '2013-10-01 12:00:00 am'
+    payload['search']['bitness']   = '32'
+    payload['search']['endian']   = 'little'
+    #payload['search']['compiler_name']   = 'gnu'
     #payload['search']['mpi_install_pass'] = 1
     #payload['search']['mpi_install_fail'] = 0
     #payload['search']['test_build_pass'] = 1
@@ -260,12 +262,12 @@ def post_complex_summary(phase="install"):
 ################################################################
 #get_fields()
 
-#post_summary()
+post_summary()
 #post_summary_options()
 #post_complex_summary("install")
 #post_complex_summary("test_build")
 #post_complex_summary("test_run")
-post_complex_summary("all")
+#post_complex_summary("all")
 
 print "-" * 70
 

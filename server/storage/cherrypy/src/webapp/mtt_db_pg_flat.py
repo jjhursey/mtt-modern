@@ -229,6 +229,41 @@ class Database_pg_flat( mtt_db.Database ):
                 return True
         return False
 
+    def _sql_convert_bitness_str_to_sql(self, bitness):
+        if bitness == "unknown":
+            return "B'000000'";
+        elif bitness == "8":
+            return "B'000001'";
+        elif bitness == "16":
+            return "B'000010'";
+        elif bitness == "32/64":
+            return "B'001100'";
+        elif bitness == "32":
+            return "B'000100'";
+        elif bitness == "64":
+            return "B'001000'";
+        elif bitness == "128":
+            return "B'010000'";
+        else:
+            return "unknown";
+
+    def _sql_convert_endian_str_to_sql(self, endian):
+        if endian == "little":
+            return "B'01'";
+        elif endian == "big":
+            return "B'10'";
+        else:
+            return "unknown";
+
+    def _sql_convert_vpath_str_to_sql(self, vpath):
+        if vpath == "relative":
+            return "B'01'";
+        elif vpath == "absolute":
+            return "B'10'";
+        else:
+            return "unknown";
+
+
     def _sql_create_outer_select_field(self, field, qualify=""):
         if field == "bitness":
             return """(CASE
@@ -394,7 +429,27 @@ class Database_pg_flat( mtt_db.Database ):
                 qualify = "mpi_install."
             where += "\n\t AND "+qualify+"compiler_version = '"+searching['compiler_version']+"'"
             del searching["compiler_version"]
-        
+
+        #
+        # Process bitness
+        #
+        if "bitness" in searching:
+            vtmp = self._sql_convert_bitness_str_to_sql(searching["bitness"])
+            self._logger.debug("%s S-: Convert bitness: <%s> to <%s>" % (self._name, searching["bitness"], vtmp) )
+            where += "\n\t AND bitness = "+ vtmp
+            del searching["bitness"]
+        if "endian" in searching:
+            vtmp = self._sql_convert_endian_str_to_sql(searching["endian"])
+            self._logger.debug("%s S-: Convert endian: <%s> to <%s>" % (self._name, searching["endian"], vtmp) )
+            where += "\n\t AND endian = "+ vtmp
+            del searching["endian"]
+        if "vpath_mode" in searching:
+            vtmp = self._sql_convert_vpath_mode_str_to_sql(searching["vpath_mode"])
+            self._logger.debug("%s S-: Convert vpath_mode: <%s> to <%s>" % (self._name, searching["vpath_mode"], vtmp) )
+            where += "\n\t AND vpath_mode = "+ vtmp
+            del searching["vpath_mode"]
+
+
         #
         # Special Key: pass/fail/skip/timed/perf
         #
@@ -451,12 +506,9 @@ class Database_pg_flat( mtt_db.Database ):
         #
         self._logger.debug(self._name + "-"*40)
         for k,v in searching.iteritems():
+            where += "\n\t AND "+ k +" = '"+ v +"'"
             self._logger.debug("%s S-: %20s matching '%s'" % (self._name, k,v))
         self._logger.debug(self._name + "-"*40)
-
-        for k,v in searching.iteritems():
-            where += "\n\t AND "+ k +" = '"+ v +"'"
-
 
 
         #################################################################
