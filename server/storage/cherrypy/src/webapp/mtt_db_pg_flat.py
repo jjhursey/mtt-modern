@@ -431,7 +431,7 @@ class Database_pg_flat( mtt_db.Database ):
             del searching["compiler_version"]
 
         #
-        # Process bitness
+        # Process bitness / endian / vpath_mode
         #
         if "bitness" in searching:
             vtmp = self._sql_convert_bitness_str_to_sql(searching["bitness"])
@@ -1000,6 +1000,25 @@ class Database_pg_flat( mtt_db.Database ):
                         outer_where += "= 4"
                     else:
                         outer_where += "= 999"
+
+        #
+        # Process bitness / endian / vpath_mode
+        #
+        if "bitness" in searching:
+            vtmp = self._sql_convert_bitness_str_to_sql(searching["bitness"])
+            self._logger.debug("%s S-: Convert bitness: <%s> to <%s>" % (self._name, searching["bitness"], vtmp) )
+            where += "\n\t AND bitness = "+ vtmp
+            del searching["bitness"]
+        if "endian" in searching:
+            vtmp = self._sql_convert_endian_str_to_sql(searching["endian"])
+            self._logger.debug("%s S-: Convert endian: <%s> to <%s>" % (self._name, searching["endian"], vtmp) )
+            where += "\n\t AND endian = "+ vtmp
+            del searching["endian"]
+        if "vpath_mode" in searching:
+            vtmp = self._sql_convert_vpath_mode_str_to_sql(searching["vpath_mode"])
+            self._logger.debug("%s S-: Convert vpath_mode: <%s> to <%s>" % (self._name, searching["vpath_mode"], vtmp) )
+            where += "\n\t AND vpath_mode = "+ vtmp
+            del searching["vpath_mode"]
 
         #
         # Process Search fields
