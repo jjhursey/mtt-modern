@@ -17,18 +17,6 @@ $(document).ready(function() {
     //TODO: Fix Multiple Drill-Down on same selection bug (Destroys Table)
     //TODO: Fix Start Over button mess
 
-    // X Color code of Summary table
-    //TODO: Color code of Details table
-
-
-
-    //problems:
-    //  - status code 500
-
-
-    // 1618 -> change phase to test build -> click details button -> count = 5
-
-
     //determine when to destroy table (drilldowns)
     var oldphase;
 
@@ -102,7 +90,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
     var TBDETAILLIST = [
         "http_username",
@@ -122,7 +111,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
     var TRDETAILLIST = [
         "http_username",
@@ -146,7 +136,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
 
     var REQUESTFORMAT = 'YYYY-MM-DD hh:mm:ss a';
@@ -327,13 +318,8 @@ $(document).ready(function() {
 
         if( grabJSON ){ return; }
 
-        //
-        if( columnIdx && oldphase == currentPhase && oldphase != "all" ){
-            table.destroy();
-        }
-
         if( isSum ) {
-            makeTheRequest(type, jsonRequest, true);
+            makeTheRequest(type, jsonRequest, true, false, columnIdx);
         } else {
             jsonRequest.options = { "count_only": 1 };
             makeTheRequest(type, jsonRequest, false, true); //grab count of results
@@ -550,9 +536,17 @@ $(document).ready(function() {
      * @param check - boolean: true = grab page count/false = grab detail results
      * @param isSum - boolean: true = summary POST/false = details POST
      * @param type - 'summary'/'detail' - postfix to url for request type
+     * @param columnIdx -
      */
-    function makeTheRequest ( type, json, isSum, check ){
+    function makeTheRequest ( type, json, isSum, check, columnIdx ){
         var url = "http://flux.cs.uwlax.edu/mtt/api" + type;
+
+        //TODO: Figure out why is this is here...
+        //if( columnIdx && oldphase == currentPhase && oldphase != "all" && lastJSON != json){
+        //    table.destroy();
+        //}
+
+
         lastJSON = json;
 
         //compare objects with Lo-Dash to prevent requesting same data twice in a row
@@ -560,6 +554,8 @@ $(document).ready(function() {
             if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases)) {
                 console.log("ABORT THE SUMMARY QUERY!!!!");
                 return;
+            } else if ( columnIdx && oldphase == currentPhase && oldphase != "all"  ) {
+                    table.destroy();
             }
             lastSumJSON = json;
             console.log( "lastSumJSON written to" );
@@ -579,12 +575,20 @@ $(document).ready(function() {
             dataType: 'json',
             data: JSON.stringify(json),
             contentType: 'application/json',
+            timeout: 10000,
+            beforeSend: function() {
+                if(isSum){
+                    $('#table').hide();
+                }
+                $('#table').after("<div name='load' style='margin-left:35%'> <img src='img/loading.gif'/> </div>");
+            },
             success: function(data){
                 if (isSum) {
                     buildTable( data.values );
                     addCSS();
                     fillColList( ALLLIST );
                     buildSelect();
+                    $('#table').show();
                 } else {
                     if (check) {
                         count = data.values[0][0];
@@ -594,10 +598,33 @@ $(document).ready(function() {
                         detailsReport( data, resultStart );
                     }
                 }
+                $('div[name=load]').remove();
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert(xhr.status);
-                alert(thrownError);
+                load = $('div[name=load]');
+                //TODO: use statuscode - xhr.status?
+                //switch( xhr.status ){
+                //  case 503:
+                //  load.empty();
+                //  load.html("Uh-oh!! Service is down!!!!! Rebuilding in 3 seconds...");
+
+
+
+                switch( thrownError ){
+                    case "timeout":
+                        load.empty();
+                        load.html("Uh-oh!! It timed out!!!!! Rebuilding in 3 seconds...");
+                        //setTimeout(location.reload, 500);
+                        break;
+                    case "Internal Server Error":
+                        load.empty();
+                        load.html("Uh-oh!! Looks like the server didn't like that...Rebuilding in 3 seconds...");
+                        //setTimeout(location.reload, 500);
+                        break;
+                    default:
+                        alert(xhr.status);
+                        alert(thrownError);
+                }
             }
         })
     }
@@ -669,24 +696,24 @@ $(document).ready(function() {
                 sqlCol.append( '&nbsp;' );
                 break;
             case "install":
-                newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
-                columnsRaw = [ "configure_arguments", "compiler_name", "bitness", "endian" ];
+                newColumns = [ "Bitness", "Endian", "Compiler", "Configure args" ];
+                columnsRaw = [ "bitness", "endian", "compiler_name", "configure_arguments" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_build":
-                newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
-                columnsRaw = [ "test_suite_name", "compiler_version", "bitness" ];
+                newColumns = [ "Bitness", "Compiler", "Compiler ver.", "Suite" ];
+                columnsRaw = [ "bitness", "compiler_name", "compiler_version", "test_suite_name" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_run":
-                newColumns = [ "Suite", "Test", "np", "Command" ];
-                columnsRaw = [ "test_suite_name", "test_name", "np", "full_command" ];
+                newColumns = [ "Suite", "np", "Test", "Command" ];
+                columnsRaw = [ "test_suite_name", "np", "test_name", "full_command" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
@@ -888,7 +915,7 @@ $(document).ready(function() {
             var name = list[i];
             var input = "<option value'" + name + "'>" + name + "</option>";
             $('#my-select').append( input );
-            console.log( input );
+            //console.log( input );
         }
     }
 
@@ -1234,7 +1261,7 @@ $(document).ready(function() {
         var row;
         var colidx = table.cell(this).index().column;
 
-        if( isNaN(data) ) {
+        if( isNaN(data) || data === "32" || data === "64" ) {
             if( field.val() === data ){
                 field.val("");
                 field.focus();
@@ -1252,7 +1279,7 @@ $(document).ready(function() {
                 $( 'button[value=details]' ).removeAttr('disabled');
             }
         } else {
-            console.log("Not today, hotshot!");
+            console.log("Not today, hotshot!"); // was originally for bitness
         }
 
     } );
@@ -1360,8 +1387,10 @@ $(document).ready(function() {
 
     //-summary
     function summary(){
-        $( '#table' ).show();
-        $( '#details' ).hide();
+        if( $('#details').is(":visible")  ){
+            $( '#table' ).show();
+            $( '#details' ).hide();
+        }
 
         $( 'button[value=filter]' ).removeAttr('disabled');
 
@@ -1392,11 +1421,13 @@ $(document).ready(function() {
 
     //-start over
     $( document ).on( 'click', 'button[value=startover]', function(){
+        //location.reload();
+
         $( 'input[type=text]' ).val('');
         $( 'select[name^=dates] option[value="past2weeks"]' ).attr("selected","selected");
         $( 'select[name^=phases] option[value="all"]' ).attr("selected","selected");
 
-        start.datepicker( 'setDate', '-1d' );
+        start.datepicker( 'setDate', -1 );
         end.datepicker( 'setDate', new Date() );
 
         if( currentPhase !== "all" ){
@@ -1553,9 +1584,31 @@ $(document).ready(function() {
                             .addClass('detailsTable');
 
         var tmp = '.detailsTable table tr:nth-child(n+' + n + '):nth-child(-n+' + (n+1) + ') td';
+        var result = '.detailsTable table tr:nth-child(n+' + (n+3) + ') td';
+        result = $(result).html().trim();
 
-        $( tmp ).addClass('highlight')
-                .wrapInner( '<pre></pre>' );
+        var color;
+
+        switch( result ){
+            case "0":
+                color = "red";
+                break;
+            case "1":
+                color = "green";
+                break;
+            case "2":
+                color = "yellow";
+                break;
+            case "3":
+                color = "orange";
+                break;
+            default:
+                break;
+        }
+
+        $( tmp ).addClass(color)
+            .wrapInner( '<pre></pre>' );
+
 
         $('#details').show( "fast" );
 
@@ -1574,8 +1627,6 @@ $(document).ready(function() {
             tmp = "No results found...";
             $('#details').append( tmp );
         }
-
-
     }
 
     function paginationInit(){

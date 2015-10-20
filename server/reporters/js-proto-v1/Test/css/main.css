@@ -241,9 +241,6 @@ table.dataTable tbody td.selected {
       font-size:10px;
   }
 
-  .highlight{
-      background-color: lightgreen;
-  }
 
 
   /* pagination */

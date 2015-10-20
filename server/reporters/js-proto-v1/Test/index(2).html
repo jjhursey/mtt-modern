@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <link rel="shortcut icon" href="http://www.open-mpi.org/favicon.ico">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+    <script src="js/1.11.2-jquery-ui.js"></script>
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+
+    <!--Moment-->
+    <script type="text/javascript" charset="utf8" src="js/moment.js"></script>
+    <script type="text/javascript" charset="utf8" src="js/moment-with-locales.js"></script>
+    <script>
+        var app = angular.module('app', []);
+
+
+
+        app.controller('table', function($scope) {
+            //var Data = $resource("url", {}, {});
+            //$scope.table = Data.get();
+
+            $.ajax({
+                type: 'POST',
+                url: "http://flux.cs.uwlax.edu/mtt/api/summary",
+                dataType: 'json',
+                data: {"columns":["http_username","platform_name","platform_hardware","os_name","mpi_name","mpi_version"],"phases":"all","search":{"start_timestamp":"2013-09-01 12:00:00 am","end_timestamp":"2013-09-01 11:59:59 pm"}},
+                contentType: 'application/json',
+                success: function(data){
+                    $scope.table = data;
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+            })
+
+
+        })
+
+
+    </script>
+    <link rel="stylesheet" href="css/main.css">
+
+    <script src="js/jquery.multi-select.js"></script>
+</head>
+<body ng-app="app" >
+
+<div id="topbar">
+    MTT JS Reporter (Prototype) <input type='image' src='img/caret.png' name='hidecaret'>
+</div>
+
+
+
+<!--Bottom-->
+<table ng-controller="table" >
+    <tr ng-repeat="row in table.values">
+        <td ng-repeat="value in row">{{value}}</td>
+    </tr>
+</table>
+
+<div id="table" style="width: auto; margin: 10px auto;">
+    <table id="example" class="display compact" cellspacing="0" width="100%">
+        <thead>
+        <tr id = "headers" >
+            <th rowspan="2">Org</th>
+            <th rowspan="2">Platform name</th>
+            <th rowspan="2">Hardware</th>
+            <th rowspan="2">OS</th>
+            <th rowspan="2">MPI name</th>
+            <th rowspan="2">MPI version</th>
+            <th colspan="2">MPI Install</th>
+            <th colspan="2">Test Build</th>
+            <th colspan="5">Test Run</th>
+        </tr>
+        <tr>
+            <!--MPI Install-->
+            <th>Pass</th>
+            <th>Fail</th>
+            <!--Test Build-->
+            <th>Pass</th>
+            <th>Fail</th>
+            <!--Test Run-->
+            <th>Pass</th>
+            <th>Fail</th>
+            <th>Skip</th>
+            <th>Timed</th>
+            <!--<th>Perf</th>-->
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<div id="details">
+    <div class="pagination" id="top" ></div>
+    <div id="details-report"></div>
+    <div class="pagination" id="bottom" ></div>
+</div>
+
+
+<!-- BEGIN Handlebars -->
+
+<!-- Details Table -->
+<script id="details-table" type="text/x-handlebars-template">
+    {{#each values}}
+    <table>
+        <tr>
+            <th>#</th>
+            <td> {{offset @index}} </td>
+        </tr>
+        {{#each this}}
+        <tr>
+            <th class="label">{{lookup ../../fields @index}}</th>
+            <td>
+                {{this}}
+            </td>
+        </tr>
+        {{/each}}
+    </table>
+    {{/each}}
+</script>
+
+<!-- END Handlebars -->
+
+</body>
+</html>
