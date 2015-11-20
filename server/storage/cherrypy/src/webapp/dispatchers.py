@@ -547,9 +547,87 @@ class Info(_ServerResourceBase):
 
         if level == "runtime":
             return self._info_runtime( )
+        elif level == "testsuite":
+            return self._info_testsuite( )
         else:
             self.logger.error(prefix + " Unsupported URL")
             raise cherrypy.HTTPError(400)
+
+    #
+    # POST /info/testsuite
+    #
+    def _info_testsuite( self ):
+        prefix = '[GET /info/testsuite]'
+        self.logger.debug(prefix)
+
+        rtn = {}
+        rtn['status'] = 0
+        rtn['status_message'] = 'Success'
+
+        # Make sure they sent JSON data
+        if not hasattr(cherrypy.request, "json"):
+            self.logger.error(prefix + " No json data sent")
+            raise cherrypy.HTTPError(400)
+
+        data = cherrypy.request.json
+        start_time = datetime.datetime.now()
+        end_time = datetime.datetime.now()
+
+
+        self.logger.debug("m" * 80)
+        self.logger.debug("m" * 80)
+        self.logger.debug("mmmm  New Test Suite Request")
+        self.logger.debug("m" * 80)
+        self.logger.debug("m" * 80)
+        pp = pprint.PrettyPrinter(indent=4)
+        self.logger.debug("(Headers) = \n"+pp.pformat(cherrypy.request.headers))
+        self.logger.debug("m" * 80)
+        self.logger.debug("(Data) = \n" + json.dumps(data, sort_keys=True, indent=4, separators=(',',': ')))
+        self.logger.debug("m" * 80)
+
+        self.logger.debug("-" * 70)
+        self.logger.debug("Preprocess parameters")
+
+        #
+        # Determine the 'phases' (only one option)
+        #
+        phases = ["test_run"]
+        cherrypy.session['phases'] = phases
+
+        #
+        # Validate the search parameters
+        #
+        self.logger.debug("-" * 70)
+        self.logger.debug("Validate Parameters")
+        rtn = check.validate_info_testsuite_parameters(self._db, self.logger, cherrypy.session, data)
+        if rtn['status'] != 0:
+            self.logger.error("Validate Failed:")
+            self.logger.error("Returned: " + str(rtn['status']) + ") " + rtn['status_msg'])
+            return rtn
+
+        #
+        # Perform the search
+        #
+        self.logger.debug("-" * 70)
+        self.logger.debug("Perform search")
+        fields = ["duration"]
+
+        rows, fields = self._db.get_testsuite(cherrypy.session, data)
+        if rows is None:
+            rtn = { "fields" : fields, "values" : None }
+        else:
+            rtn = { "fields" : fields, "values" : rows }
+
+        #
+        # Build the response
+        #
+        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
+        rtn['status'] = 0
+        rtn['status_msg'] = 'Success'
+        rtn['timing'] = str(datetime.datetime.now() - start_time)
+        rtn['test_suite_name'] = data['search']['test_suite_name']
+
+        return rtn;
 
     #
     # POST /info/runtime
@@ -603,7 +681,6 @@ class Info(_ServerResourceBase):
         if phases[0] not in {"install", "test_build", "test_run"}:
             return self._return_error(prefix, -1, "Error: Parameter 'phases' unsupported \""+phases[0]+"\".")
 
-        self.logger.debug("Type: %s (%d)" %( type(data["phases"]), len(data["phases"]) ) )
         self.logger.debug("(Phase) = \""+ ",".join(phases) +"\"")
         
         cherrypy.session['phases'] = phases
@@ -639,7 +716,19 @@ class Info(_ServerResourceBase):
         rtn['status'] = 0
         rtn['status_msg'] = 'Success'
         rtn['timing'] = str(datetime.datetime.now() - start_time)
-        
+
+        rtn['search'] = {}
+        if 'mpi_name' in data['search']:
+            rtn['search']['mpi_name'] = data['search']['mpi_name']
+        if 'mpi_version' in data['search']:
+            rtn['search']['mpi_version'] = data['search']['mpi_version']
+
+        if 'test_suite_name' in data['search']:
+            rtn['search']['test_suite_name'] = data['search']['test_suite_name']
+
+        if 'test_name' in data['search']:
+            rtn['search']['test_name'] = data['search']['test_name']
+
         return rtn;
 
 

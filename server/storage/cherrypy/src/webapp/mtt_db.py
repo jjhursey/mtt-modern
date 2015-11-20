@@ -40,6 +40,9 @@ class Database():
     def get_runtime(self, session=[], data=[]):
         raise NotImplemented("Please implement this method")
 
+    def get_testsuite(self, session=[], data=[]):
+        raise NotImplemented("Please implement this method")
+
     ##########################################################
 
 from webapp.mtt_db_pg_flat import Database_pg_flat
@@ -80,6 +83,13 @@ class DBAccess():
     def run_detail(self, session=[], data=[]):
         self._db.connect()
         (rows, fields) = self._db.run_detail(session, data)
+        self._db.disconnect()
+
+        return (rows, fields)
+
+    def get_testsuite(self, session=[], data=[]):
+        self._db.connect()
+        (rows, fields) = self._db.get_testsuite(session, data)
         self._db.disconnect()
 
         return (rows, fields)
