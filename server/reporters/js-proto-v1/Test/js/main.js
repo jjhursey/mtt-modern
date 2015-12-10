@@ -154,6 +154,7 @@ $(document).ready(function() {
         "OS",
         "MPI name",
         "MPI Install",
+        "MPI Version",
         "Test Build",
         "Test Run"
     ];
@@ -166,8 +167,8 @@ $(document).ready(function() {
         "platform_hardware",
         "os_name",
         "mpi_name",
-        "mpi_version",
-        "mpi_install.compiler_name"
+        "mpi_version"
+        //"mpi_install.compiler_name"
         //"http_username",
         //"platform_name",
         //"platform_hardware",
@@ -194,6 +195,7 @@ $(document).ready(function() {
     var table;
     var fields;
     var values;
+    var cached;
 
     var startMoment;
     var endMoment;
@@ -296,7 +298,7 @@ $(document).ready(function() {
      * @param columnIdx - columnIdx clicked on (sent from drilldowns)
      * @param grabJSON - boolean: true = create JSON request/false = send POST request w/ JSON  (lazy alt to creating createJSON())
      */
-    function pullValues( type, columnIdx, grabJSON ){
+    function pullValues( type, columnIdx, grabJSON, force ){
         var columnlist ="";
         lastType = type;
 
@@ -319,7 +321,7 @@ $(document).ready(function() {
         if( grabJSON ){ return; }
 
         if( isSum ) {
-            makeTheRequest(type, jsonRequest, true, false, columnIdx);
+            makeTheRequest(type, jsonRequest, true, false, columnIdx, force);
         } else {
             jsonRequest.options = { "count_only": 1 };
             makeTheRequest(type, jsonRequest, false, true); //grab count of results
@@ -537,8 +539,9 @@ $(document).ready(function() {
      * @param isSum - boolean: true = summary POST/false = details POST
      * @param type - 'summary'/'detail' - postfix to url for request type
      * @param columnIdx -
+     * @param force - force request (used during showing columns)
      */
-    function makeTheRequest ( type, json, isSum, check, columnIdx ){
+    function makeTheRequest ( type, json, isSum, check, columnIdx, force ){
         var url = "http://flux.cs.uwlax.edu/mtt/api" + type;
 
         //TODO: Figure out why is this is here...
@@ -551,7 +554,7 @@ $(document).ready(function() {
 
         //compare objects with Lo-Dash to prevent requesting same data twice in a row
         if( type === "summary") {
-            if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases)) {
+            if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases) && !force) {
                 console.log("ABORT THE SUMMARY QUERY!!!!");
                 return;
             } else if ( columnIdx && oldphase == currentPhase && oldphase != "all"  ) {
@@ -560,7 +563,7 @@ $(document).ready(function() {
             lastSumJSON = json;
             console.log( "lastSumJSON written to" );
         } else if ( type === "detail" && json.options['count_only'] === 1) {
-            if( _.isEqual( lastDetJSON.search, json.search ) && _.isEqual( lastDetJSON.phases, json.phases )  ){
+            if( _.isEqual( lastDetJSON.search, json.search ) && _.isEqual( lastDetJSON.phases, json.phases ) && !force  ){
                 setMax( Math.ceil(count/reqLimit) ); //details - start over - same details (w/o this pagination will work, but no text will be displayed until interaction)
                 console.log("ABORT THE DETAILS QUERY!!!!");
                 return;
@@ -583,6 +586,7 @@ $(document).ready(function() {
                 $('#table').after("<div name='load' style='margin-left:35%'> <img src='img/loading.gif'/> </div>");
             },
             success: function(data){
+                cached = data;
                 if (isSum) {
                     buildTable( data.values );
                     addCSS();
@@ -920,6 +924,20 @@ $(document).ready(function() {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /*
      ****************************************************
       MultiSelect and Aggregation Configuration
@@ -960,6 +978,26 @@ $(document).ready(function() {
       });
   }
 
+
+    //fill with columns of current phase
+    function fillShowColList(){
+        switch( currentPhase ) {
+            case "all":
+                showColList = ALLLIST;
+                break;
+            case "install":
+                showColList = INSTALLLIST
+                break;
+            case "test_build":
+                showColList = BUILDLIST;
+                break;
+            case "test_run":
+                showColList = RUNLIST;
+                break;
+            default:
+                break;
+        }
+    }
 
     //fill with strings that are both in strCols and showCols
     function fillShowStrColList(){
@@ -1007,19 +1045,26 @@ $(document).ready(function() {
 
         }
 
+        fillShowColList();
         fillShowStrColList();
         if (aggregate) {
             aggregateData();
         }
 
         if( refresh ){
-            //table.ajax.reload(aggregateData);
+            ////////table.ajax.reload(aggregateData);
+
             table.destroy();
-            buildTable( values );
+            //buildTable( cached );
+            pullValues( lastType,null,null,true );
             toggleCols();
         }
         console.timeEnd( " Total Completion Time" );
     }
+
+
+
+
 
     //TODO: reload with cache
     function aggregateData(){
@@ -1036,10 +1081,18 @@ $(document).ready(function() {
 
             //grab left hand of comparison
             lrow = this.row( index );
+            console.log( "lrow:" + lrow );
 
-            for ( var i = 0; i < showStrColList.length; i++ ){
-                lstring += this.row( index ).data()[ colList.indexOf( showStrColList[i] ) ] + ", ";
+            //TODO: Change hard coded 6 to be dependent on phase
+            //for ( var i = 0; i < showStrColList.length; i++ ){
+            for ( var i = 0; i < 6; i++ ){
+                //console.log( this.row(index).data()[i] );
+                lstring += this.row( index ).data()[ stringCols.indexOf( showStrColList[i] ) ] + ", ";
+                //lstring += this.row( index ).data()[i] + ", ";
+                //console.log( this.row( index ).data() );
             }
+
+            console.log("lstring:" + lstring);
 
             //grab right hand of comparison
             table.rows().iterator( 'row', function( content, index2 ){
@@ -1073,7 +1126,7 @@ $(document).ready(function() {
             });
 
             if( skiprows.indexOf( lstring ) < 0 ){
-                //console.log("BANISHING: " + lstring);
+                console.log("BANISHING: " + lstring);
                 skiprows.push( lstring );
             }
         });
@@ -1089,6 +1142,26 @@ $(document).ready(function() {
         table.draw();
         console.timeEnd( "Time spent aggregating" );
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /*
