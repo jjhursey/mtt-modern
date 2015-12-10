@@ -10,6 +10,42 @@ base_url = "http://flux.cs.uwlax.edu/~jjhursey/mtt/api"
 ################################################################
 #
 ################################################################
+def post_info_tests():
+    global base_url
+    
+    s = requests.Session()
+
+    headers = {'content-type': 'application/json'}
+
+    payload = {}
+
+    #payload['columns'] = []
+    #payload['columns'].append( 'duration' )
+    #payload['columns'].append( 'test_suite_name' )
+    
+    payload['search'] = {}
+    payload['search']['start_timestamp'] = '2015-01-01 01:00:00'
+    payload['search']['end_timestamp']   = '2015-01-11 01:00:00'
+    payload['search']['test_suite_name'] = 'trivial'
+
+    
+    url = base_url + "/info/testsuite"
+    print "URL: " + url
+    
+    r = s.post(url, data=json.dumps(payload), headers=headers)
+
+    if r.status_code == 200:
+        print "Post Summary: %d: %s" % (r.status_code, r.headers['content-type'])
+        result = r.json()
+        print json.dumps(r.json(), sort_keys=True, indent=4, separators=(',',': '))
+        print json.dumps(payload, sort_keys=True, indent=4, separators=(',',': '))
+    
+        if result["values"] != None:
+            print "Length: " + str( len(result["values"]) )
+    else:
+        print "Reason: \"%s\"" % str(r.reason)
+
+################################################################
 def post_info_runtime():
     global base_url
     
@@ -21,18 +57,16 @@ def post_info_runtime():
 
     payload['phases'] = []
     #payload['phases'].append( 'install' )
-    #payload['phases'].append( 'test_build' )
-    payload['phases'].append( 'test_run' )
+    payload['phases'].append( 'test_build' )
+    #payload['phases'].append( 'test_run' )
 
-    #payload['columns'] = []
-    #payload['columns'].append( 'duration' )
-    #payload['columns'].append( 'test_suite_name' )
-    
     payload['search'] = {}
     payload['search']['start_timestamp'] = '2015-01-01 01:00:00'
     payload['search']['end_timestamp']   = '2015-01-11 01:00:00'
-    payload['search']['test_name']       = 'c_hello'
-    #payload['search']['test_name']       = 'MPI_Allreduce_c'
+    #payload['search']['mpi_name']        = 'ompi-nightly-master'
+    #payload['search']['mpi_version']     = 'dev-641-gc857cc9'
+    payload['search']['test_suite_name'] = 'trivial'
+    #payload['search']['test_name']       = 'c_hello'
 
     
     url = base_url + "/info/runtime"
@@ -55,6 +89,7 @@ def post_info_runtime():
 ################################################################
 # Main Program
 ################################################################
+#post_info_tests()
 post_info_runtime()
 
 print "-" * 70

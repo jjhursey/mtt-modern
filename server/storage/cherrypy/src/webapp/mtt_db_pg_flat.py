@@ -107,6 +107,26 @@ class Database_pg_flat( mtt_db.Database ):
 
         return rows, fields
 
+    def get_testsuite(self, session=[], data=[]):
+        sql, fields = self._build_testsuite_sql(session, data)
+        if None == sql:
+            return None
+
+        self._logger.debug(self._name + " (SQL) = \n" + sql)
+
+        self._cursor.execute(sql + ";")
+        self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
+        rows = self._cursor.fetchall()
+
+        if rows[0] is None or rows[0][0] is None:
+            self._logger.debug(self._name + " NONE!!!!!!!!!!")
+        self._logger.debug(self._name + " Len = " + str(len(rows)) + " type = " + str(type(rows[0][0])) )
+
+        # Flatten the tuple returned
+        rows = [name for sublist in rows for name in sublist]
+
+        return rows, fields
+
     def get_runtime(self, session=[], data=[]):
         sql, fields = self._build_runtime_sql(session, data)
         if None == sql:
@@ -121,6 +141,9 @@ class Database_pg_flat( mtt_db.Database ):
         if rows[0] is None or rows[0][0] is None:
             self._logger.debug(self._name + " NONE!!!!!!!!!!")
         self._logger.debug(self._name + " Len = " + str(len(rows)) + " type = " + str(type(rows[0][0])) )
+
+        # Flatten the tuple returned
+        rows = [value for sublist in rows for value in sublist]
 
         return rows, fields
 
@@ -1146,6 +1169,26 @@ class Database_pg_flat( mtt_db.Database ):
         return sql, final_fields
 
 
+    def _build_testsuite_sql(self, session=[], data=[]):
+
+        self._logger.debug(self._name + " Start: " + data['search']['start_timestamp'])
+        self._logger.debug(self._name + " End  : " + data['search']['end_timestamp'])
+
+        # JJH Assumes that we are searching for test_suite_name only
+        sql  = "SELECT DISTINCT tr.test_name"
+        sql += "\n"
+        sql += "FROM "
+        sql += "test_run AS tr JOIN test_build AS tb USING (test_build_id) "
+        sql += "\n"
+        sql += "WHERE "
+        sql += "\n\t tr.start_timestamp >= '"+data['search']['start_timestamp']+"' AND"
+        sql += "\n\t tr.start_timestamp <= '"+data['search']['end_timestamp']+"' AND"
+        sql += "\n\t tb.test_suite_name = '"+data['search']['test_suite_name']+"'"
+
+        final_fields = ['test_name']
+
+        return sql, final_fields
+
     def _build_runtime_sql(self, session=[], data=[]):
 
         self._logger.debug(self._name + " Start: " + data['search']['start_timestamp'])
@@ -1174,8 +1217,33 @@ class Database_pg_flat( mtt_db.Database ):
         sql += "WHERE "
         sql += "\n\t" + select_from_table+".start_timestamp >= '"+data['search']['start_timestamp']+"' AND"
         sql += "\n\t" + select_from_table+".start_timestamp <= '"+data['search']['end_timestamp']+"' AND"
-        sql += "\n\t" + select_from_table+".test_name = '"+data['search']['test_name']+"'"
 
-        final_fields = ['duration']
+        if 'install' in data['phases']:
+            if 'mpi_name' in data['search'] and 'mpi_version' in data['search']:
+                sql += "\n\t" + select_from_table+".mpi_name = '"+data['search']['mpi_name']+"' AND"
+                sql += "\n\t" + select_from_table+".mpi_version = '"+data['search']['mpi_version']+"'"
+            elif 'mpi_name' in data['search']:
+                sql += "\n\t" + select_from_table+".mpi_name = '"+data['search']['mpi_name']+"'"
+            elif 'mpi_version' in data['search']:
+                sql += "\n\t" + select_from_table+".mpi_version = '"+data['search']['mpi_version']+"'"
+            else:
+                return None
+        elif 'test_build' in data['phases']:
+            if 'test_suite_name' in data['search']:
+                sql += "\n\t" + select_from_table+".test_suite_name = '"+data['search']['test_suite_name']+"'"
+            else:
+                return None
+
+        elif 'test_run' in data['phases']:
+            if 'test_name' in data['search']:
+                sql += "\n\t" + select_from_table+".test_name = '"+data['search']['test_name']+"'"
+            else:
+                return None
+        else:
+            return None
+
+
+
+        final_fields = ['min_duration', 'avg_duration', 'max_duration']
 
         return sql, final_fields
