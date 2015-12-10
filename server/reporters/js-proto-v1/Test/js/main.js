@@ -578,7 +578,7 @@ $(document).ready(function() {
             dataType: 'json',
             data: JSON.stringify(json),
             contentType: 'application/json',
-            timeout: 10000,
+            timeout: 1200000,
             beforeSend: function() {
                 if(isSum){
                     $('#table').hide();
