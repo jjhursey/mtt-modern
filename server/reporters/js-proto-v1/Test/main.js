@@ -10,29 +10,15 @@ $(document).ready(function() {
      ****************************************************
      */
 
-    // X Fixed phase change query, test run additional perf column,
-    // X Implement pagination w/ page preload (preload not needed due to very fast response times)
-    //TODO: Fix drilldown when clicked in phase other than 'all' phase
-    // X change dropdown options to match POST settings (all switch statements here...)
-    // X Change state with start over button ( w/ automatic query )
-    // X save last json request to compare - possibly use cache ( e.g. when hiding datatable )
-    // X Add text "Showing x to y of z results" on details
+    // (N) Implement _more_ Handlebars (table creation)
+
     //TODO: Fix Show/Hide
     //TODO: Fix CSS
-    //TODO: Implement Handlebars (table creation)
-    // X Fix phase change behavior ( details report creation ) - removes details and brings user back to summary
-
-    //problems:
-    //  - status code 500
-
-
-    // 1618 -> change phase to test build -> click details button -> count = 5
-
+    //TODO: Fix Multiple Drill-Down on same selection bug (Destroys Table)
+    //TODO: Fix Start Over button mess
 
     //determine when to destroy table (drilldowns)
     var oldphase;
-    var strike1; // phase is != all
-    var strike2; //
 
     var ns = {
         currentPhase: "all",
@@ -104,7 +90,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
     var TBDETAILLIST = [
         "http_username",
@@ -124,7 +111,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
     var TRDETAILLIST = [
         "http_username",
@@ -148,7 +136,8 @@ $(document).ready(function() {
         "result_message",
         "result_stdout",
         "result_stderr",
-        "environment"
+        "environment",
+        "test_result"
     ];
 
     var REQUESTFORMAT = 'YYYY-MM-DD hh:mm:ss a';
@@ -158,11 +147,28 @@ $(document).ready(function() {
     var end = $( "#enddate" );
 
     //
-    var colList =  [];
+    var colList =  [
+        "Org",
+        "Platform name",
+        "Hardware",
+        "OS",
+        "MPI name",
+        "MPI Install",
+        "MPI Version",
+        "Test Build",
+        "Test Run"
+    ];
     var showColList = [];
     var hideColList = [];
 
     var stringCols = [
+        "http_username",
+        "platform_name",
+        "platform_hardware",
+        "os_name",
+        "mpi_name",
+        "mpi_version"
+        //"mpi_install.compiler_name"
         //"http_username",
         //"platform_name",
         //"platform_hardware",
@@ -172,16 +178,16 @@ $(document).ready(function() {
         //"mpi_install.compiler_name"
     ];
     var intCols = [
-        //"mpi_install_pass",
-        //"mpi_install_fail",
-        //"test_build_pass",
-        //"test_build_fail",
-        //"test_run_pass",
-        //"test_run_fail",
-        //"test_run_skip",
-        //"test_run_timed",
-        //"bitness",
-        //"endian"
+        "mpi_install_pass",
+        "mpi_install_fail",
+        "test_build_pass",
+        "test_build_fail",
+        "test_run_pass",
+        "test_run_fail",
+        "test_run_skip",
+        "test_run_timed",
+        "bitness",
+        "endian"
     ];
 
     var showStrColList = [];
@@ -189,6 +195,7 @@ $(document).ready(function() {
     var table;
     var fields;
     var values;
+    var cached;
 
     var startMoment;
     var endMoment;
@@ -246,8 +253,6 @@ $(document).ready(function() {
         //set dropdown menu
         $( 'select[name=dates]' ).val( 'past24hrs' );
 
-        var startDate =
-
         //var absoluteMin = new Date(2011, 0, 1);
         //var absoluteMax = new Date(2014, 9, 29);
 
@@ -293,7 +298,7 @@ $(document).ready(function() {
      * @param columnIdx - columnIdx clicked on (sent from drilldowns)
      * @param grabJSON - boolean: true = create JSON request/false = send POST request w/ JSON  (lazy alt to creating createJSON())
      */
-    function pullValues( type, columnIdx, grabJSON ){
+    function pullValues( type, columnIdx, grabJSON, force ){
         var columnlist ="";
         lastType = type;
 
@@ -315,13 +320,8 @@ $(document).ready(function() {
 
         if( grabJSON ){ return; }
 
-        //
-        if( columnIdx && oldphase == currentPhase && oldphase != "all" ){
-            table.destroy();
-        }
-
         if( isSum ) {
-            makeTheRequest(type, jsonRequest, true);
+            makeTheRequest(type, jsonRequest, true, false, columnIdx, force);
         } else {
             jsonRequest.options = { "count_only": 1 };
             makeTheRequest(type, jsonRequest, false, true); //grab count of results
@@ -538,21 +538,32 @@ $(document).ready(function() {
      * @param check - boolean: true = grab page count/false = grab detail results
      * @param isSum - boolean: true = summary POST/false = details POST
      * @param type - 'summary'/'detail' - postfix to url for request type
+     * @param columnIdx -
+     * @param force - force request (used during showing columns)
      */
-    function makeTheRequest ( type, json, isSum, check ){
-        var url = "http://138.49.30.31:9090/" + type;
+    function makeTheRequest ( type, json, isSum, check, columnIdx, force ){
+        var url = "http://flux.cs.uwlax.edu/mtt/api" + type;
+
+        //TODO: Figure out why is this is here...
+        //if( columnIdx && oldphase == currentPhase && oldphase != "all" && lastJSON != json){
+        //    table.destroy();
+        //}
+
+
         lastJSON = json;
 
         //compare objects with Lo-Dash to prevent requesting same data twice in a row
         if( type === "summary") {
-            if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases)) {
+            if (_.isEqual(lastSumJSON.search, json.search) && _.isEqual(lastSumJSON.phases, json.phases) && !force) {
                 console.log("ABORT THE SUMMARY QUERY!!!!");
                 return;
+            } else if ( columnIdx && oldphase == currentPhase && oldphase != "all"  ) {
+                    table.destroy();
             }
             lastSumJSON = json;
             console.log( "lastSumJSON written to" );
         } else if ( type === "detail" && json.options['count_only'] === 1) {
-            if( _.isEqual( lastDetJSON.search, json.search ) && _.isEqual( lastDetJSON.phases, json.phases )  ){
+            if( _.isEqual( lastDetJSON.search, json.search ) && _.isEqual( lastDetJSON.phases, json.phases ) && !force  ){
                 setMax( Math.ceil(count/reqLimit) ); //details - start over - same details (w/o this pagination will work, but no text will be displayed until interaction)
                 console.log("ABORT THE DETAILS QUERY!!!!");
                 return;
@@ -567,11 +578,21 @@ $(document).ready(function() {
             dataType: 'json',
             data: JSON.stringify(json),
             contentType: 'application/json',
+            timeout: 1200000,
+            beforeSend: function() {
+                if(isSum){
+                    $('#table').hide();
+                }
+                $('#table').after("<div name='load' style='margin-left:35%'> <img src='img/loading.gif'/> </div>");
+            },
             success: function(data){
+                cached = data;
                 if (isSum) {
                     buildTable( data.values );
-                    //fillColList( colList );
-                    //buildSelect();
+                    addCSS();
+                    fillColList( ALLLIST );
+                    buildSelect();
+                    $('#table').show();
                 } else {
                     if (check) {
                         count = data.values[0][0];
@@ -581,10 +602,33 @@ $(document).ready(function() {
                         detailsReport( data, resultStart );
                     }
                 }
+                $('div[name=load]').remove();
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert(xhr.status);
-                alert(thrownError);
+                load = $('div[name=load]');
+                //TODO: use statuscode - xhr.status?
+                //switch( xhr.status ){
+                //  case 503:
+                //  load.empty();
+                //  load.html("Uh-oh!! Service is down!!!!! Rebuilding in 3 seconds...");
+
+
+
+                switch( thrownError ){
+                    case "timeout":
+                        load.empty();
+                        load.html("Uh-oh!! It timed out!!!!! Rebuilding in 3 seconds...");
+                        //setTimeout(location.reload, 500);
+                        break;
+                    case "Internal Server Error":
+                        load.empty();
+                        load.html("Uh-oh!! Looks like the server didn't like that...Rebuilding in 3 seconds...");
+                        //setTimeout(location.reload, 500);
+                        break;
+                    default:
+                        alert(xhr.status);
+                        alert(thrownError);
+                }
             }
         })
     }
@@ -656,24 +700,24 @@ $(document).ready(function() {
                 sqlCol.append( '&nbsp;' );
                 break;
             case "install":
-                newColumns = [ "Configure args", "Compiler", "Bitness", "Endian" ];
-                columnsRaw = [ "configure_arguments", "compiler_name", "bitness", "endian" ];
+                newColumns = [ "Bitness", "Endian", "Compiler", "Configure args" ];
+                columnsRaw = [ "bitness", "endian", "compiler_name", "configure_arguments" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_build":
-                newColumns = [ "Suite", "Compiler", "Compiler ver.", "Bitness" ];
-                columnsRaw = [ "test_suite_name", "compiler_version", "bitness" ];
+                newColumns = [ "Bitness", "Compiler", "Compiler ver.", "Suite" ];
+                columnsRaw = [ "bitness", "compiler_name", "compiler_version", "test_suite_name" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
 
                 break;
             case "test_run":
-                newColumns = [ "Suite", "Test", "np", "Command" ];
-                columnsRaw = [ "test_suite_name", "test_name", "np", "full_command" ];
+                newColumns = [ "Suite", "np", "Test", "Command" ];
+                columnsRaw = [ "test_suite_name", "np", "test_name", "full_command" ];
 
                 sqlTable = buildSqlTableString( newColumns, columnsRaw, sqlTable );
                 sqlCol.append( sqlTable );
@@ -869,11 +913,29 @@ $(document).ready(function() {
      */
 
     function fillColList( list ){
-        for( var i = 0; i < colList.length; i++  ) {
-            var name = list[i];var input = "<option value'" + name + "'>" + name + "</option>";
+        //$('#my-select').multiSelect('refresh');
+
+        for( var i = 0; i < list.length; i++ ) {
+            var name = list[i];
+            var input = "<option value'" + name + "'>" + name + "</option>";
             $('#my-select').append( input );
+            //console.log( input );
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /*
@@ -916,6 +978,26 @@ $(document).ready(function() {
       });
   }
 
+
+    //fill with columns of current phase
+    function fillShowColList(){
+        switch( currentPhase ) {
+            case "all":
+                showColList = ALLLIST;
+                break;
+            case "install":
+                showColList = INSTALLLIST
+                break;
+            case "test_build":
+                showColList = BUILDLIST;
+                break;
+            case "test_run":
+                showColList = RUNLIST;
+                break;
+            default:
+                break;
+        }
+    }
 
     //fill with strings that are both in strCols and showCols
     function fillShowStrColList(){
@@ -963,19 +1045,26 @@ $(document).ready(function() {
 
         }
 
+        fillShowColList();
         fillShowStrColList();
         if (aggregate) {
             aggregateData();
         }
 
         if( refresh ){
-            //table.ajax.reload(aggregateData);
+            ////////table.ajax.reload(aggregateData);
+
             table.destroy();
-            buildTable( values );
+            //buildTable( cached );
+            pullValues( lastType,null,null,true );
             toggleCols();
         }
         console.timeEnd( " Total Completion Time" );
     }
+
+
+
+
 
     //TODO: reload with cache
     function aggregateData(){
@@ -992,10 +1081,18 @@ $(document).ready(function() {
 
             //grab left hand of comparison
             lrow = this.row( index );
+            console.log( "lrow:" + lrow );
 
-            for ( var i = 0; i < showStrColList.length; i++ ){
-                lstring += this.row( index ).data()[ colList.indexOf( showStrColList[i] ) ] + ", ";
+            //TODO: Change hard coded 6 to be dependent on phase
+            //for ( var i = 0; i < showStrColList.length; i++ ){
+            for ( var i = 0; i < 6; i++ ){
+                //console.log( this.row(index).data()[i] );
+                lstring += this.row( index ).data()[ stringCols.indexOf( showStrColList[i] ) ] + ", ";
+                //lstring += this.row( index ).data()[i] + ", ";
+                //console.log( this.row( index ).data() );
             }
+
+            console.log("lstring:" + lstring);
 
             //grab right hand of comparison
             table.rows().iterator( 'row', function( content, index2 ){
@@ -1029,7 +1126,7 @@ $(document).ready(function() {
             });
 
             if( skiprows.indexOf( lstring ) < 0 ){
-                //console.log("BANISHING: " + lstring);
+                console.log("BANISHING: " + lstring);
                 skiprows.push( lstring );
             }
         });
@@ -1045,6 +1142,26 @@ $(document).ready(function() {
         table.draw();
         console.timeEnd( "Time spent aggregating" );
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /*
@@ -1085,8 +1202,8 @@ $(document).ready(function() {
 
     function setFields( date ){
         var now = new Date();
-        //var now = new Date(2014, 10, 29, 0, 0, 0);
-        console.log( "NOW: " + now  );
+        //console.log( "NOW: " + now  );
+        start.datepicker('option', 'maxDate', now );
 
         switch( date ){
             case "today":
@@ -1123,6 +1240,7 @@ $(document).ready(function() {
                 end.datepicker( 'setDate', now );
                 break;
             case "past2weeks":
+                start.datepicker('option', 'maxDate', now );
                 start.datepicker( 'setDate', "-2w" );
                 end.datepicker( 'setDate', now );
                 break;
@@ -1135,6 +1253,7 @@ $(document).ready(function() {
     function setMoments(){
         var startdate = getDate( $('select[name=dates] option:selected').attr('value') ).hours(0).minutes(0).seconds(0);
         var enddate = $( '#enddate' ).val();
+        //var enddate = new Date();
 
         startMoment = startdate.format( REQUESTFORMAT );
         endMoment = moment( new Date(enddate) ).endOf('day');
@@ -1215,7 +1334,7 @@ $(document).ready(function() {
         var row;
         var colidx = table.cell(this).index().column;
 
-        if( isNaN(data) ) {
+        if( isNaN(data) || data === "32" || data === "64" ) {
             if( field.val() === data ){
                 field.val("");
                 field.focus();
@@ -1233,7 +1352,7 @@ $(document).ready(function() {
                 $( 'button[value=details]' ).removeAttr('disabled');
             }
         } else {
-            console.log("Not today, hotshot!");
+            console.log("Not today, hotshot!"); // was originally for bitness
         }
 
     } );
@@ -1290,13 +1409,13 @@ $(document).ready(function() {
         if( sqlbox.is(":visible") ){
             sqlbox.hide("slow");
         } else {
-            settingsbox.hide( "slow" );
+            $('#settingsbox').hide( "slow" );
             sqlbox.show("slow");
         }
     });
 
     $('input[name=settings]').on( 'click', function(){
-        settingsbox.toggle( 'display' );
+        $('#settingsbox').toggle( 'display' );
     });
 
     $( document ).on( 'click', 'input[name=hidecaret]', function(){
@@ -1341,8 +1460,10 @@ $(document).ready(function() {
 
     //-summary
     function summary(){
-        $( '#table' ).show();
-        $( '#details' ).hide();
+        if( $('#details').is(":visible")  ){
+            $( '#table' ).show();
+            $( '#details' ).hide();
+        }
 
         $( 'button[value=filter]' ).removeAttr('disabled');
 
@@ -1373,11 +1494,13 @@ $(document).ready(function() {
 
     //-start over
     $( document ).on( 'click', 'button[value=startover]', function(){
+        //location.reload();
+
         $( 'input[type=text]' ).val('');
         $( 'select[name^=dates] option[value="past2weeks"]' ).attr("selected","selected");
         $( 'select[name^=phases] option[value="all"]' ).attr("selected","selected");
 
-        start.datepicker( 'setDate', '-1d' );
+        start.datepicker( 'setDate', -1 );
         end.datepicker( 'setDate', new Date() );
 
         if( currentPhase !== "all" ){
@@ -1534,9 +1657,31 @@ $(document).ready(function() {
                             .addClass('detailsTable');
 
         var tmp = '.detailsTable table tr:nth-child(n+' + n + '):nth-child(-n+' + (n+1) + ') td';
+        var result = '.detailsTable table tr:nth-child(n+' + (n+3) + ') td';
+        result = $(result).html().trim();
 
-        $( tmp ).addClass('highlight')
-                .wrapInner( '<pre></pre>' );
+        var color;
+
+        switch( result ){
+            case "0":
+                color = "red";
+                break;
+            case "1":
+                color = "green";
+                break;
+            case "2":
+                color = "yellow";
+                break;
+            case "3":
+                color = "orange";
+                break;
+            default:
+                break;
+        }
+
+        $( tmp ).addClass(color)
+            .wrapInner( '<pre></pre>' );
+
 
         $('#details').show( "fast" );
 
@@ -1555,8 +1700,6 @@ $(document).ready(function() {
             tmp = "No results found...";
             $('#details').append( tmp );
         }
-
-
     }
 
     function paginationInit(){
@@ -1627,6 +1770,8 @@ $(document).ready(function() {
     }
 
     $('select[name=count]').on('change', function(){
+
+        console.log('hit');
         var p = $('.pagination');
         reqLimit = $( "select[name=count] option:selected").attr('value');
 
@@ -1634,7 +1779,7 @@ $(document).ready(function() {
         setMax( Math.ceil(count/reqLimit) );
         setTextRange();
 
-        throttleReturn( p.jqPagination('option', 'current_page') );
+        //throttleReturn( p.jqPagination('option', 'current_page') );
     });
 
     //For number of table with offset of 1
@@ -1644,13 +1789,31 @@ $(document).ready(function() {
 
 
     // Performance Buttons
+    $( document ).on( 'change', '#table', function(){
+       addCSS();
+    });
+
+    //color cordination
+    function addCSS(){
+        var cells = $('td.immediate');
+
+        var cellData = table.cells( cells ).data();
 
 
+        table.cells().every( function () {
 
+            var colidx = this.index().column;
+            var colh = table.column( colidx ).header();
+            var colheader = $(colh).html();
 
-
-
-
+            if (this.data() > 0) {
+                if( colheader == "Pass" ){ $(this.node()).addClass( 'green' ); }
+                if( colheader == "Fail" ){ $(this.node()).addClass( 'red' ); }
+                if( colheader == "Skip" ){ $(this.node()).addClass( 'yellow' ); }
+                if( colheader == "Timed" ){ $(this.node()).addClass( 'orange' ); }
+            }
+        });
+    }
 
 
 });
