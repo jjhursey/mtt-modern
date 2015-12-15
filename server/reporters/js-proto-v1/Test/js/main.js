@@ -1409,13 +1409,13 @@ $(document).ready(function() {
         if( sqlbox.is(":visible") ){
             sqlbox.hide("slow");
         } else {
-            settingsbox.hide( "slow" );
+            $('#settingsbox').hide( "slow" );
             sqlbox.show("slow");
         }
     });
 
     $('input[name=settings]').on( 'click', function(){
-        settingsbox.toggle( 'display' );
+        $('#settingsbox').toggle( 'display' );
     });
 
     $( document ).on( 'click', 'input[name=hidecaret]', function(){
@@ -1770,6 +1770,8 @@ $(document).ready(function() {
     }
 
     $('select[name=count]').on('change', function(){
+
+        console.log('hit');
         var p = $('.pagination');
         reqLimit = $( "select[name=count] option:selected").attr('value');
 
@@ -1777,7 +1779,7 @@ $(document).ready(function() {
         setMax( Math.ceil(count/reqLimit) );
         setTextRange();
 
-        throttleReturn( p.jqPagination('option', 'current_page') );
+        //throttleReturn( p.jqPagination('option', 'current_page') );
     });
 
     //For number of table with offset of 1
