@@ -100,6 +100,7 @@ class _ServerResourceBase:
         _db_settings = {}
 
         section = "pg_flat"
+        #section = "pg_v3"
         _db_settings = conf[section]
 
         # Get a handle for the DB, and make sure it is available
@@ -621,11 +622,16 @@ class Info(_ServerResourceBase):
         #
         # Build the response
         #
-        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
+        if rows is None:
+            self.logger.debug("Returning: (NULL) values (rows)")
+        else:
+            self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
         rtn['status'] = 0
         rtn['status_msg'] = 'Success'
         rtn['timing'] = str(datetime.datetime.now() - start_time)
         rtn['test_suite_name'] = data['search']['test_suite_name']
+
+        #self.logger.debug("(RTN) = \n" + json.dumps(rtn, sort_keys=True, indent=4, separators=(',',': ')))
 
         return rtn;
 
@@ -712,7 +718,11 @@ class Info(_ServerResourceBase):
         #
         # Build the response
         #
-        self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
+        if rows is None:
+            self.logger.debug("Returning: (NULL) values (rows)")
+        else:
+            self.logger.debug("Returning: " + str(len(rows)) + " values (rows)")
+
         rtn['status'] = 0
         rtn['status_msg'] = 'Success'
         rtn['timing'] = str(datetime.datetime.now() - start_time)
@@ -728,6 +738,8 @@ class Info(_ServerResourceBase):
 
         if 'test_name' in data['search']:
             rtn['search']['test_name'] = data['search']['test_name']
+
+        #self.logger.debug("(RTN) = \n" + json.dumps(rtn, sort_keys=True, indent=4, separators=(',',': ')))
 
         return rtn;
 

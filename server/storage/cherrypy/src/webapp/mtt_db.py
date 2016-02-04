@@ -46,6 +46,7 @@ class Database():
     ##########################################################
 
 from webapp.mtt_db_pg_flat import Database_pg_flat
+from webapp.mtt_db_pg_v3 import Database_pg_v3
 
 
 ##########################################
@@ -54,7 +55,8 @@ from webapp.mtt_db_pg_flat import Database_pg_flat
 # - Caller invokes operations on the data
 ##########################################
 class DBAccess():
-    _known_db = { 'pg_flat' : Database_pg_flat }
+    _known_db = { 'pg_flat' : Database_pg_flat,
+                  'pg_v3'   : Database_pg_v3 }
 
     ##########################################
     def __init__(self, logger, dbtype, auth):

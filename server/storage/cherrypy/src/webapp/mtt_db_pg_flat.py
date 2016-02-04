@@ -8,12 +8,14 @@ import pprint
 import psycopg2
 import string
 import re
+from threading import Lock
 
 #################################################################
 # Interface to the database
 #################################################################
 class Database_pg_flat( mtt_db.Database ):
     _name = '[DB PG Flat]'
+    _lock = Lock()
 
     def __init__(self, logger, auth):
         mtt_db.Database.__init__(self, logger, auth)
@@ -21,6 +23,7 @@ class Database_pg_flat( mtt_db.Database ):
 
         self._cursor = None
         self._connection = None
+        self._refcount = 0
 
 
     ##########################################################
@@ -47,6 +50,10 @@ class Database_pg_flat( mtt_db.Database ):
             return False
 
     def connect(self):
+        if self._refcount > 0:
+            self._logger.error(self._name + " connect while refcount > 0 (" + str(self._refcount) + ") zzzzzzzzzzzzzzzzz")
+            return
+
         conn_str = ("dbname=" +    str(self._auth["dbname"]) +
                     " user=" +     str(self._auth["username"]) +
                     " password="+ str(self._auth["password"]) +
@@ -57,6 +64,10 @@ class Database_pg_flat( mtt_db.Database ):
 
 
     def disconnect(self):
+        if self._refcount > 0:
+            self._logger.error(self._name + " disconnect while refcount > 0 (" + str(self._refcount) + ") zzzzzzzzzzzzzzzzz")
+            return
+
         self._cursor.close()
         self._connection.close()
 
@@ -110,17 +121,26 @@ class Database_pg_flat( mtt_db.Database ):
     def get_testsuite(self, session=[], data=[]):
         sql, fields = self._build_testsuite_sql(session, data)
         if None == sql:
-            return None
+            return None, fields
 
         self._logger.debug(self._name + " (SQL) = \n" + sql)
 
-        self._cursor.execute(sql + ";")
-        self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
-        rows = self._cursor.fetchall()
+        self._lock.acquire()
+        try:
+            self._refcount += 1
+            self._cursor.execute(sql + ";")
+            self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
+            rows = self._cursor.fetchall()
+            self._refcount -= 1
+        except:
+            raise
+        finally:
+            self._lock.release()
 
-        if rows[0] is None or rows[0][0] is None:
+        if len(rows) == 0 or rows[0] is None or rows[0][0] is None:
             self._logger.debug(self._name + " NONE!!!!!!!!!!")
-        self._logger.debug(self._name + " Len = " + str(len(rows)) + " type = " + str(type(rows[0][0])) )
+        else:
+            self._logger.debug(self._name + " Len = " + str(len(rows)) + " type = " + str(type(rows[0][0])) )
 
         # Flatten the tuple returned
         rows = [name for sublist in rows for name in sublist]
@@ -130,13 +150,26 @@ class Database_pg_flat( mtt_db.Database ):
     def get_runtime(self, session=[], data=[]):
         sql, fields = self._build_runtime_sql(session, data)
         if None == sql:
-            return None
+            return None, fields
 
         self._logger.debug(self._name + " (SQL) = \n" + sql)
 
-        self._cursor.execute(sql + ";")
-        self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
-        rows = self._cursor.fetchall()
+        # JJH Need to acquire a lock here since it seems that
+        # it is possible for multiple threads to share the cursor concurrently
+        # this leads to a race condition where one thread can close the cursor
+        # while others are using it, and it is possible that some threads see
+        # a cursor with data that does not match their query!
+        self._lock.acquire()
+        try:
+            self._refcount += 1
+            self._cursor.execute(sql + ";")
+            self._logger.debug(self._name + " Count = " + str(self._cursor.rowcount))
+            rows = self._cursor.fetchall()
+            self._refcount -= 1
+        except:
+            raise
+        finally:
+            self._lock.release()
 
         if rows[0] is None or rows[0][0] is None:
             self._logger.debug(self._name + " NONE!!!!!!!!!!")
@@ -1205,7 +1238,7 @@ class Database_pg_flat( mtt_db.Database ):
         elif 'test_run' in data['phases']:
             select_from_table = "test_run"
         else:
-            return None
+            return None, None
 
 
         # JJH Assumes that we are searching for test_name only
@@ -1227,20 +1260,20 @@ class Database_pg_flat( mtt_db.Database ):
             elif 'mpi_version' in data['search']:
                 sql += "\n\t" + select_from_table+".mpi_version = '"+data['search']['mpi_version']+"'"
             else:
-                return None
+                return None, None
         elif 'test_build' in data['phases']:
             if 'test_suite_name' in data['search']:
                 sql += "\n\t" + select_from_table+".test_suite_name = '"+data['search']['test_suite_name']+"'"
             else:
-                return None
+                return None, None
 
         elif 'test_run' in data['phases']:
             if 'test_name' in data['search']:
                 sql += "\n\t" + select_from_table+".test_name = '"+data['search']['test_name']+"'"
             else:
-                return None
+                return None, None
         else:
-            return None
+            return None, None
 
 
 
