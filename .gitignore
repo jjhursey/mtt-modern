@@ -4,6 +4,11 @@ server/php/stats/mtt-contrib.pdf
 server/php/tmp/*.csv
 server/php/tmp/*.png
 
+*.pyc
+.DS_Store
+db.sqlite3
+*/mttscratch
+
 server/reporters/script-v3php-to-json/flat.json
 server/reporters/script-v3php-to-json/pretty.json
 

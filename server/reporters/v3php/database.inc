@@ -110,6 +110,9 @@ function do_pg_connect() {
             $connected = true;
             # Serialize all transactions by default - Safer that way.
             do_pg_query("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE", false);
+            # Set statement timeout to 60 seconds to prevent accidental/malicious long running 
+            # queries from wasting system resources.
+            do_pg_query("SET statement_timeout = 60000", false);
         }
     }
 }

@@ -5,6 +5,8 @@
 # Copyright (c) 2006-2012 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2009      High Performance Computing Center Stuttgart, 
 #                         University of Stuttgart.  All rights reserved.
+# Copyright (c) 2015      Research Organization for Information Science
+#                         and Technology (RIST). All rights reserved.
 # $COPYRIGHT$
 # 
 # Additional copyrights may follow
@@ -78,6 +80,11 @@ sub Install {
     $config->{autogen} = $tmp
         if (defined($tmp));
 
+    $tmp = Value($ini, $section, "ompi_autogen_arguments");
+    $tmp =~ s/\n|\r/ /g;
+    $config->{autogen_arguments} = $tmp
+        if (defined($tmp));
+
     $tmp = Value($ini, $section, "ompi_before_make_all");
     $config->{before_make_all} = $tmp
         if (defined($tmp));
@@ -93,6 +100,7 @@ sub Install {
         bindir => $config->{bindir},
         libdir => $config->{libdir},
         autogen => $config->{autogen},
+        autogen_arguments => $config->{autogen_arguments},
         make_all_arguments => $config->{make_all_arguments},
         make_check => $config->{make_check},
         stdout_save_lines => $config->{stdout_save_lines},
@@ -128,7 +136,7 @@ sub Install {
     my $tmp;
     $tmp = &{$func}($ret->{bindir}, $ret->{libdir}, "f77");
     $tmp = &{$func}($ret->{bindir}, $ret->{libdir}, "mpif.h")
-        if (!$tmp);
+        unless (defined($tmp) && $tmp);
     $ret->{mpifh_bindings} = $ret->{f77_bindings} = $tmp;
     Debug("Have mpif.h bindings: $ret->{mpifh_bindings}\n"); 
 
@@ -136,7 +144,7 @@ sub Install {
     # versions refer to "bindings:f90".
     $tmp = &{$func}($ret->{bindir}, $ret->{libdir}, "f90");
     $tmp = &{$func}($ret->{bindir}, $ret->{libdir}, "use_mpi")
-        if (!$tmp);
+        unless (defined($tmp) && $tmp);
     $ret->{usempi_bindings} = $ret->{f90_bindings} = $tmp;
     Debug("Have \"use mpi\" bindings: $ret->{usempi_bindings}\n"); 
 
