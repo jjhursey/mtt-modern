@@ -354,16 +354,16 @@ class DatabaseV3():
     def insert_mpi_install(self, submit_id, metadata, entry):
         prefix = self._name + " (mpi_install) "
 
-        self._logger.debug( "************** MPI Install ****************" )
-        self._logger.debug( json.dumps( entry, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
-        self._logger.debug( "************** Metadata ****************" )
-        self._logger.debug( json.dumps( metadata, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
+        # self._logger.debug( "************** MPI Install ****************" )
+        # self._logger.debug( json.dumps( entry, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
+        # self._logger.debug( "************** Metadata ****************" )
+        # self._logger.debug( json.dumps( metadata, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
 
         #
         # Process: compute_cluster
@@ -584,17 +584,16 @@ class DatabaseV3():
         prefix = self._name + " (test_build) "
         test_build_id = -1
 
-        self._logger.debug( "************** Test Build ****************" )
-        self._logger.debug( json.dumps( entry, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
-
-        self._logger.debug( "************** Metadata ****************" )
-        self._logger.debug( json.dumps( metadata, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
+        # self._logger.debug( "************** Test Build ****************" )
+        # self._logger.debug( json.dumps( entry, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
+        # self._logger.debug( "************** Metadata ****************" )
+        # self._logger.debug( json.dumps( metadata, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
 
         #
         # Find the MPI Install ID
@@ -778,17 +777,16 @@ class DatabaseV3():
         prefix = self._name + " (test_run) "
         test_run_id = -1
 
-        self._logger.debug( "************** Test Run   ****************" )
-        self._logger.debug( json.dumps( entry, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
-
-        self._logger.debug( "************** Metadata ****************" )
-        self._logger.debug( json.dumps( metadata, \
-                                        sort_keys=True, \
-                                        indent=4, \
-                                        separators=(',', ': ') ) )
+        # self._logger.debug( "************** Test Run   ****************" )
+        # self._logger.debug( json.dumps( entry, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
+        # self._logger.debug( "************** Metadata ****************" )
+        # self._logger.debug( json.dumps( metadata, \
+        #                                 sort_keys=True, \
+        #                                 indent=4, \
+        #                                 separators=(',', ': ') ) )
 
         #
         # Get test_build_id and info

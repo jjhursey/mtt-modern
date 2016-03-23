@@ -303,6 +303,7 @@ sub Submit {
             # Cleanup the data before submitting
             #
             my @all_data = ();
+            my $submit_id = -1;
             foreach my $result (@$section_obj) {
 
                 my $data;
@@ -328,6 +329,11 @@ sub Submit {
                     }
 
                     elsif ($key eq "phase") {
+                        next;
+                    }
+
+                    elsif ($key eq "submit_id") {
+                        $submit_id = int($result->{$key});
                         next;
                     }
 
@@ -357,18 +363,20 @@ sub Submit {
                 push(@all_data, $data);
             }
 
-            print "-"x70 . "\n";
-            print "x"x70 . "\n";
-            print "-"x70 . "\n";
+            if( $submit_id > 0 ) {
+                $form->{metadata}->{submit_id} = $submit_id;
+            }
+
             $form->{data} = \@all_data;
-            print Dumper( JSON->new->pretty->encode($form) );
-            print "-"x70 . "\n";
+            #print Dumper( JSON->new->pretty->encode($form) );
 
             _debug("Submitting to MTTStorage...\n");
 
             my ($req, $file) = _prepare_request(\$form);
             my $response = _do_request($$req);
-            #unlink($file);
+            if( 0 != length($file) ) {
+                unlink($file);
+            }
 
             my $sql_error = 0;
             if ($response->is_success()) {
@@ -379,7 +387,7 @@ sub Submit {
 
                 _debug("MTTStorage client got response: \n");
                 _debug("RAW: " . $response->content . "\n");
-                _debug(Dumper(JSON->new->pretty->decode( $response->content )));
+                Debug(Dumper(JSON->new->pretty->decode( $response->content )));
             } else {
                 Warning(">> Failed to report to MTTStorage: " .
                         $response->status_line . "\n" .

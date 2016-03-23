@@ -220,9 +220,21 @@ class Submit(_ServerResourceBase):
         rtn['status_message'] = 'Success'
 
         #
+        # Get the submission id
+        # The client could be submitting one they want us to use,
+        # otherwise create a new one.
+        #
+        submit_info = {}
+        if 'submit_id' in data['metadata'].keys() and data['metadata']['submit_id'] > 0:
+            self.logger.debug( "************** submit_id: Existing %s" % (str(data['metadata']['submit_id'])) )
+            submit_info = {'submit_id': data['metadata']['submit_id']}
+        else:
+            self.logger.debug( "************** submit_id: New...")
+            submit_info = self._db.get_submit_id(data['metadata'])
+
+        #
         # Submit each entry to the database
         #
-        submit_info = self._db.get_submit_id(data['metadata'])
         ids = []
         for entry in data['data']:
             value = None
