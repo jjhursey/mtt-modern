@@ -10,6 +10,7 @@
 
 import os
 import requests
+import json
 from requests.auth import HTTPBasicAuth
 
 from ReporterMTTStage import *
@@ -52,9 +53,11 @@ class IUDatabase(ReporterMTTStage):
         return
 
     def execute(self, log, keyvals, testDef):
+
         # parse the provided keyvals against our options
         cmds = {}
         testDef.parseOptions(log, self.options, keyvals, cmds)
+
         # quick sanity check
         sanity = 0
         if cmds['username'] is not None:
@@ -77,22 +80,53 @@ class IUDatabase(ReporterMTTStage):
                     log['status'] = 1;
                     log['stderr'] = "Password file " + cmds['pwfile'][0] + " does not exist"
                     return
+			elif cmds['password'] is not None:
+				password = cmds['password']
         except KeyError:
             try:
                 if cmds['password'] is not None:
                     password = cmds['password'][0]
             except KeyError:
                 pass
-        # establish the sessoin
+		#
+        # Setup the JSON data structure
+		#
         s = requests.Session()
-        headers = {}
-        headers['content-type'] = 'application/x-www-form-urlencoded'
 
-        payload = {"mtt_version_major" : "4", "mtt_version_minor" : "0", "mtt_client_version" : "4.0a1"}
+        headers = {}
+        headers['content-type'] = 'application/json'
+
+		data = {}
+
+		metadata = {}
+		metadata['local_username'] = 'aaa'
+		metadata['hostname'] = 'bbb'
+		metadata['platform_name'] = 'ccc'
+		metadata['phase'] = 'ddd'
+		metadata['mtt_client_version'] = '4.0a1'
+
+        payload = {}
+		payload['metadata'] = metadata
+		payload['data'] = data
+
+		print json.dumps(payload, sort_keys=True, indent=4, separators=(',',': '))
+
+		#
+        # Establish the session and post the data
+		#
+		url = cmds['url'] + "/submit"
         if 0 < sanity:
-            r = s.post(cmds['url'][0], data=payload, headers=headers, auth=HTTPBasicAuth(cmds['username'][0], password), verify=False)
+            r = s.post(url,
+					   data=json.dumps(payload),
+					   headers=headers, 
+					   auth=HTTPBasicAuth(cmds['username'], password), 
+					   verify=False)
         else:
-            r = s.post(cmds['url'][0], data=payload, headers=headers, verify=False)
+            r = s.post(url,
+					   data=json.dumps(payload),
+					   headers=headers,
+					   verify=False)
+
         print "<<<<<<<---------------- Response -------------------------->>>>>>"
         print "Result: %d: %s" % (r.status_code, r.headers['content-type'])
         print r.headers

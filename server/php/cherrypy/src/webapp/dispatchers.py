@@ -201,7 +201,13 @@ class Submit(_ServerResourceBase):
             self.logger.error(prefix + " No 'phase' in 'metadata' in json data")
             raise cherrypy.HTTPError(400)
 
+        #
+        # Convert the phase
+        #
         phase = self._convert_phase(data["metadata"]['phase'])
+        if phase == self._phase_unknown:
+            return self._return_error(prefix, -1, "%s An unknown phase (%s) was specified in the metadata" % (prefix, data["metadata"]["phase"]))
+
         self.logger.debug( "Phase: %2d = [%s]" % (phase, data["metadata"]['phase']) )
 
         if 'data' not in data.keys():
