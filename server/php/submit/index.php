@@ -87,8 +87,10 @@ define("undef", "");
 
 if (sizeof($_FILES)) {
     $include_file = gunzip_file($_FILES['userfile']['tmp_name']);
-    include_once($include_file);
-    unlink($include_file);
+    if( ! is_null_($include_file) ) {
+        include_once($include_file);
+        unlink($include_file);
+    }
 
     # If setup_post() is renamed, it must also be renamed in gunzip_file()
     setup_post();
@@ -1699,7 +1701,7 @@ function mtt_send_mail($message, $func) {
         return;
 
     # Export the PHP POST data to a temp file
-    if (! ($filename = tempnam("/tmp", "submit-")))
+    if (! ($filename = tempnam("/mnt/data/tmp", "submit-")))
         mtt_notice("Could not create a temporary file.\n");
 
     $filename .= ".inc";
@@ -2022,7 +2024,7 @@ function var_dump_debug_inserts($function, $line, $var_name, $arr) {
 # Return the name a temporary file to include
 function gunzip_file($filename) {
 
-    $temp_filename = tempnam("/tmp", "mtt-submit-php-");
+    $temp_filename = tempnam("/mnt/data/tmp", "mtt-submit-php-");
 
     $fp = fopen($temp_filename, "wb");
     chmod($temp_filename, 0664);
@@ -2032,6 +2034,14 @@ function setup_post() {
         \$_POST = ");
 
     $handle = gzopen($filename, 'r');
+    if( ! $handle ) {
+        pg_close();
+        $err_log_file = "/mnt/data/mtt.open-mpi.org/log/mtt-php-errors.log";
+        error_log("gunzip failed (in gzopen). Please check tmp dir for overflow.\n", 3, $err_log_file);
+        mtt_abort(400, "gunzip failed. Contact MTT Admins for help!");
+        exit(1);
+        #return null;
+    }
     while (! gzeof($handle)) {
         fwrite($fp, gzgets($handle, 4096));
     }
