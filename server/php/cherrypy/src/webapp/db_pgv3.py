@@ -13,7 +13,7 @@ from threading import Lock
 class DatabaseV3():
     _name = '[DB PG V3]'
 
-    _force_trial = True
+    _force_trial = False
     
     def __init__(self, logger, auth):
         self._auth = auth
