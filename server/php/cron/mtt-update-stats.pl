@@ -2,14 +2,27 @@
 
 use strict;
 use Env qw(HOME PATH USER);
+use Config::IniFiles;
 
 # Perform flush after each write to STDOUT
 $| = 1;
 
+my $config_filename = "config.ini";
+my $ini_section;
+my $ini = new Config::IniFiles(-file => $config_filename,
+                               -nocase => 1,
+                               -allowcontinue => 1);
+if( !$ini ) {
+    print "Error: Failed to read: $filename\n";
+    exit 1;
+}
+check_ini_section($ini, "stats", ("base_dir", "tmp_dir") );
+$ini_section = "stats";
+
 #
 # MTT Working Dir to find scripts
 #
-my $mtt_base_dir = "/l/osl/www/mtt.open-mpi.org/mtt/server/php/cron/";
+my $mtt_base_dir = resolve_value($ini, $ini_section, "base_dir");
 
 #
 # Stats collection script

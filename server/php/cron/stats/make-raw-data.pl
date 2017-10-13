@@ -8,9 +8,13 @@
 use strict;
 use DBI;
 use Class::Struct;
+use Config::IniFiles;
 
 # Flush I/O frequently
 $| = 1;
+
+my $config_filename = "config.ini";
+my $ini_section;
 
 my $v_nlt = "\n\t";
 my $v_nl  = "\n";
@@ -31,6 +35,25 @@ if( 0 != parse_cmd_line() ) {
   print_usage();
   exit -1;
 }
+
+my $ini = new Config::IniFiles(-file => $config_filename,
+                               -nocase => 1,
+                               -allowcontinue => 1);
+if( !$ini ) {
+    print "Error: Failed to read: $filename\n";
+    exit 1;
+}
+# Check the contents of the config file
+check_ini_section($ini, "database", ("user", "password", "hostname", "port", "dbname") );
+
+# Read in config entries
+$ini_section = "database";
+my $mtt_user = resolve_value($ini, $ini_section, "user");;
+my $mtt_pass = resolve_value($ini, $ini_section, "password");
+my $mtt_hostname = resolve_value($ini, $ini_section, "hostname");
+my $mtt_port = resolve_value($ini, $ini_section, "port");
+my $mtt_dbname = resolve_value($ini, $ini_section, "dbname");
+
 
 #
 # Setup queries
@@ -156,6 +179,18 @@ sub parse_cmd_line() {
       $is_limited_to_one_year = "t";
     }
     #
+    # Config file to use
+    #
+    elsif( $ARGV[$i] =~ /-config/ ) {
+      $i++;
+      if( $i < $argc ) {
+        $config_filename = $ARGV[$i];
+      } else {
+        print_update("Error: -config requires a file argument\n");
+        return -1;
+      }
+    }
+    #
     # Invalid options produce a usage message
     #
     else {
@@ -185,16 +220,9 @@ sub print_usage() {
 
 sub connect_db() {
   my $stmt;
-  my $mtt_user     = "mtt";
-  my $mtt_password;
 
   # Connect to the DB
-  if( defined($mtt_password) ) {
-    $dbh_mtt = DBI->connect("dbi:Pg:dbname=mtt",  $mtt_user, $mtt_password);
-  }
-  else {
-    $dbh_mtt = DBI->connect("dbi:Pg:dbname=mtt",  $mtt_user);
-  }
+  $dbh_mtt = DBI->connect("dbi:Pg:dbname=".$mtt_dbname.";host=".$mtt_hostname.";port=".$mtt_port,  $mtt_user, $mtt_pass);
 
   # Set an optimizer flag
   $stmt = $dbh_mtt->prepare("set constraint_exclusion = on");
